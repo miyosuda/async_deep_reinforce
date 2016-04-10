@@ -16,7 +16,7 @@ Asynchronous Advantage Actor-Critic (A3C) method for playing "Atari Pong" is now
 ## How to build
 
 First we need to build multi thread ready version of Arcade Learning Enviroment.
-I made some modofication to it to run it on multi thread enviroment.
+I made some modification to it to run it on multi thread enviroment.
 
     $ git clone https://github.com/miyosuda/Arcade-Learning-Environment.git
     $ cd Arcade-Learning-Environment-master
