@@ -50,7 +50,6 @@ class GameACNetwork(object):
       # policy entropy
       entropy = -tf.reduce_sum(self.pi * tf.log(self.pi))
       # policy loss (output)  (add minus, because this is for gradient ascent)
-      # (Parenthesis position is not same as equation in original paper)
       # TODO: ここのpolicy_lossのlog(pi)の計算部分が正しいかどうか要検討
       self.policy_loss = -( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ) ) * self.td + entropy * entropy_beta )
 
