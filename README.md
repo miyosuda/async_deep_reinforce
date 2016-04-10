@@ -8,7 +8,7 @@ An attempt to repdroduce Google Deep Mind's paper "Asynchronous Methods for Deep
 
 http://arxiv.org/abs/1602.01783
 
-Asynchronous Advantage Actor Critic method for playing Atari Pong is now implemented as a test.
+Asynchronous Advantage Actor-Critic (A3C) method for playing "Atari Pong" is now implemented as a test with TensorFlow.
 
 (However the learning result is still not good. I'm now investigating about the problem.)
 
@@ -36,4 +36,3 @@ To train,
 To display the result with game play,
 
     $python a3c_disp.py
-
