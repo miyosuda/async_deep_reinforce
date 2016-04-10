@@ -1,0 +1,9 @@
+bazel-out/*
+*.pyc
+*.so
+tmp/*
+*.png
+old/*
+checkpoints*/*
+
+
