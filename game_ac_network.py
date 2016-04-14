@@ -9,13 +9,13 @@ class GameACNetwork(object):
     with tf.device("/cpu:0"):
       self._action_size = action_size
       
-      self.W_conv1 = self._weight_variable([8, 8, 4, 16])  # stride=4
+      self.W_conv1 = self._weight_variable([3, 3, 1, 16])  # stride=2
       self.b_conv1 = self._bias_variable([16])
 
-      self.W_conv2 = self._weight_variable([4, 4, 16, 32]) # stride=2
-      self.b_conv2 = self._bias_variable([32])
+      self.W_conv2 = self._weight_variable([3, 3, 16, 4]) # stride=2
+      self.b_conv2 = self._bias_variable([4])
 
-      self.W_fc1 = self._weight_variable([2592, 256])
+      self.W_fc1 = self._weight_variable([400, 256])
       self.b_fc1 = self._bias_variable([256])
 
       # weight for policy output layer
@@ -27,12 +27,12 @@ class GameACNetwork(object):
       self.b_fc3 = self._bias_variable([1])
 
       # state (input)
-      self.s = tf.placeholder("float", [1, 84, 84, 4])
+      self.s = tf.placeholder("float", [1, 10, 10, 1])
     
-      h_conv1 = tf.nn.relu(self._conv2d(self.s, self.W_conv1, 4) + self.b_conv1)
-      h_conv2 = tf.nn.relu(self._conv2d(h_conv1, self.W_conv2, 2) + self.b_conv2)
+      h_conv1 = tf.nn.relu(self._conv2d(self.s, self.W_conv1, 1) + self.b_conv1)
+      h_conv2 = tf.nn.relu(self._conv2d(h_conv1, self.W_conv2, 1) + self.b_conv2)
 
-      h_conv2_flat = tf.reshape(h_conv2, [1, 2592])
+      h_conv2_flat = tf.reshape(h_conv2, [1, 400])
       h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, self.W_fc1) + self.b_fc1)
 
       # policy (output)
@@ -108,7 +108,7 @@ class GameACNetwork(object):
     return tf.Variable(initial)
 
   def _conv2d(self, x, W, stride):
-    return tf.nn.conv2d(x, W, strides = [1, stride, stride, 1], padding = "VALID")
+    return tf.nn.conv2d(x, W, strides = [1, stride, stride, 1], padding = "SAME")
 
   def _save_sub(self, sess, prefix, var, name):
     var_val = var.eval(sess)

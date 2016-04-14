@@ -8,7 +8,12 @@ import random
 import math
 import os
 
-from game_state import ACTION_SIZE
+#from game_state import ACTION_SIZE
+
+##
+ACTION_SIZE = 4
+##
+
 from game_ac_network import GameACNetwork
 from a3c_training_thread import A3CTrainingThread
 

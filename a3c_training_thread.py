@@ -5,8 +5,14 @@ import random
 
 from accum_trainer import AccumTrainer
 from rmsprop_applier import RMSPropApplier
-from game_state import GameState
-from game_state import ACTION_SIZE
+#from game_state import GameState
+#from game_state import ACTION_SIZE
+
+###
+from maze_state import MazeState
+ACTION_SIZE = 4
+###
+
 from game_ac_network import GameACNetwork
 
 #GAMMA = 0.95
@@ -15,6 +21,7 @@ LOCAL_T_MAX = 5
 RMSP_EPSILON = 1e-10
 #ENTROPY_BETA = 0.01
 ENTROPY_BETA = 0.001
+
 
 
 class A3CTrainingThread(object):
@@ -59,7 +66,8 @@ class A3CTrainingThread(object):
     
     self.sync = self.local_network.sync_from(global_network)
     
-    self.game_state = GameState(113 * thread_index)
+    #self.game_state = GameState(113 * thread_index)
+    self.game_state = MazeState()
     
     self.local_t = 0
 
