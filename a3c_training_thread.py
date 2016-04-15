@@ -144,8 +144,10 @@ class A3CTrainingThread(object):
     if not terminal_end:
       R = self.local_network.run_value(sess, self.game_state.s_t)
 
+    actions.reverse()      
     states.reverse()
     rewards.reverse()
+    values.reverse()
 
     # 勾配を算出して加算していく
     for(ai, ri, si, Vi) in zip(actions, rewards, states, values):
