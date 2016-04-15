@@ -4,12 +4,8 @@ import numpy as np
 import cv2
 from ale_python_interface import ALEInterface
 
-ROM = "pong.bin"     # action size = 3
-#ROM = "breakout.bin" # action size = 4
-
-#ACTION_SIZE = 18
-ACTION_SIZE = 3 # for pong
-#ACTION_SIZE = 4 # for breakout
+from constants import ROM
+from constants import ACTION_SIZE
 
 class GameState(object):
   def __init__(self, rand_seed, display=False):

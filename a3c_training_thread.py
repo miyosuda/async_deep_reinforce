@@ -5,24 +5,15 @@ import random
 
 from accum_trainer import AccumTrainer
 from rmsprop_applier import RMSPropApplier
-#from game_state import GameState
-#from game_state import ACTION_SIZE
 
-###
 from maze_state import MazeState
-ACTION_SIZE = 4
-###
-
 from game_ac_network import GameACNetwork
 
-GAMMA = 0.95
-#GAMMA = 0.99
-LOCAL_T_MAX = 5
-RMSP_EPSILON = 1e-10
-#ENTROPY_BETA = 0.01
-ENTROPY_BETA = 0.0
-#ENTROPY_BETA = 0.001
-
+from constants import GAMMA
+from constants import LOCAL_T_MAX
+from constants import RMSP_EPSILON
+from constants import ENTROPY_BETA
+from constants import ACTION_SIZE
 
 
 class A3CTrainingThread(object):
@@ -155,13 +146,10 @@ class A3CTrainingThread(object):
     if not terminal_end:
       R = self.local_network.run_value(sess, self.game_state.s_t)
 
-    # ここのreverse修正した
-    actions.reverse()
-    rewards.reverse()
+    actions.reverse()      
     states.reverse()
+    rewards.reverse()
     values.reverse()
-
-    print "------before-----"
 
     # 勾配を算出して加算していく
     for(ai, ri, si, Vi) in zip(actions, rewards, states, values):
