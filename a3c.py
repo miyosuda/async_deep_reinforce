@@ -8,17 +8,16 @@ import random
 import math
 import os
 
-from game_state import ACTION_SIZE
 from game_ac_network import GameACNetwork
 from a3c_training_thread import A3CTrainingThread
 
-PARALLEL_SIZE = 8
-INITIAL_ALPHA_LOW = 1e-4
-INITIAL_ALPHA_HIGH = 1e-2
-INITIAL_ALPHA_LOG_RATE = 0.5 # 1e-3
-#INITIAL_ALPHA_LOG_RATE = 0.25 # 1e-4
-MAX_TIME_STEP = 4000000 * 8
-CHECKPOINT_DIR = 'checkpoints'
+from constants import ACTION_SIZE
+from constants import PARALLEL_SIZE
+from constants import INITIAL_ALPHA_LOW
+from constants import INITIAL_ALPHA_HIGH
+from constants import INITIAL_ALPHA_LOG_RATE
+from constants import MAX_TIME_STEP
+from constants import CHECKPOINT_DIR
 
 
 def log_uniform(lo, hi, rate):

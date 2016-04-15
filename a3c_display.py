@@ -4,12 +4,12 @@ import numpy as np
 import random
 
 from game_state import GameState
-from game_state import ACTION_SIZE
 from game_ac_network import GameACNetwork
 from a3c_training_thread import A3CTrainingThread
 
-PARALLEL_SIZE = 8
-CHECKPOINT_DIR = 'checkpoints'
+from constants import ACTION_SIZE
+from constants import PARALLEL_SIZE
+from constants import CHECKPOINT_DIR
 
 def choose_action(pi_values):
   values = []

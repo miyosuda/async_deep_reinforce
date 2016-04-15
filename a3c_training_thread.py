@@ -9,13 +9,10 @@ from game_state import GameState
 from game_state import ACTION_SIZE
 from game_ac_network import GameACNetwork
 
-#GAMMA = 0.95
-GAMMA = 0.99
-LOCAL_T_MAX = 5
-RMSP_EPSILON = 1e-10
-#ENTROPY_BETA = 0.01
-ENTROPY_BETA = 0.001
-
+from constants import GAMMA
+from constants import LOCAL_T_MAX
+from constants import RMSP_EPSILON
+from constants import ENTROPY_BETA
 
 class A3CTrainingThread(object):
   def __init__(self, thread_index, global_network, initial_learning_rate, max_global_time_step):
