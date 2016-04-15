@@ -10,7 +10,7 @@ http://arxiv.org/abs/1602.01783
 
 Asynchronous Advantage Actor-Critic (A3C) method for playing "Atari Pong" is now implemented as a test with TensorFlow.
 
-(However the learning result is still not good. I'm now investigating about the problem.)
+(However the learning result is still not good. I'm now investigating about the problem. Any advice or suggestion is strongly welcomed.)
 
 
 ## How to build
@@ -19,7 +19,7 @@ First we need to build multi thread ready version of Arcade Learning Enviroment.
 I made some modification to it to run it on multi thread enviroment.
 
     $ git clone https://github.com/miyosuda/Arcade-Learning-Environment.git
-    $ cd Arcade-Learning-Environment-master
+    $ cd Arcade-Learning-Environment
     $ cmake -DUSE_SDL=ON -DUSE_RLGLUE=OFF -DBUILD_EXAMPLES=ON .
     $ make -j 4
 	
