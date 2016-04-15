@@ -17,12 +17,15 @@ ACTION_SIZE = 4
 from game_ac_network import GameACNetwork
 from a3c_training_thread import A3CTrainingThread
 
-PARALLEL_SIZE = 8
+#PARALLEL_SIZE = 8
+PARALLEL_SIZE = 1
 INITIAL_ALPHA_LOW = 1e-4
 INITIAL_ALPHA_HIGH = 1e-2
 INITIAL_ALPHA_LOG_RATE = 0.5 # 1e-3
 #INITIAL_ALPHA_LOG_RATE = 0.25 # 1e-4
-MAX_TIME_STEP = 4000000 * 8
+#MAX_TIME_STEP = 4000000 * 8
+#MAX_TIME_STEP = 5000
+MAX_TIME_STEP = 10
 CHECKPOINT_DIR = 'checkpoints'
 
 
@@ -102,5 +105,5 @@ for t in train_threads:
 if not os.path.exists(CHECKPOINT_DIR):
   os.mkdir(CHECKPOINT_DIR)  
 
-saver.save(sess, CHECKPOINT_DIR + '/' + 'checkpoint', global_step = global_t)
+###saver.save(sess, CHECKPOINT_DIR + '/' + 'checkpoint', global_step = global_t)
 

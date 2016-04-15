@@ -20,6 +20,7 @@ PLAYER = 1.0
 
 class MazeState(object):
   def __init__(self):
+    self._maze_image = self._create_maze()    
     self._reset()
 
   def _reset(self):
@@ -61,8 +62,6 @@ class MazeState(object):
     return image
 
   def _move(self, dx, dy):
-    image = self._create_maze()
-
     new_x = self.x + dx
     new_y = self.y + dy
 
@@ -75,7 +74,7 @@ class MazeState(object):
     if new_y > 9:
       new_y = 9
 
-    is_wall = image[new_x][new_y] == WALL
+    is_wall = (self._maze_image[new_x][new_y] == WALL)
     if is_wall:
       new_x = self.x
       new_y = self.y
@@ -83,7 +82,7 @@ class MazeState(object):
     self.y = new_y
 
     #print "x=", self.x, " y=", self.y
-
+    image = np.zeros( (10, 10), dtype=float )
     image[self.x][self.y] = PLAYER
     return image
 

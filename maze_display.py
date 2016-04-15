@@ -8,7 +8,7 @@ ACTION_SIZE = 4
 from game_ac_network import GameACNetwork
 from a3c_training_thread import A3CTrainingThread
 
-PARALLEL_SIZE = 8
+PARALLEL_SIZE = 1
 CHECKPOINT_DIR = 'checkpoints'
 
 def choose_action(pi_values):
@@ -25,6 +25,19 @@ def choose_action(pi_values):
       return i;
   #fail safe
   return len(values)-1
+
+def calc_value(network, x, y):
+  image = np.zeros( (10, 10), dtype=float )
+  image[x][y] = 1.0
+  s_t = np.reshape(image, (10, 10, 1) )
+  
+  pi_values = network.run_policy(sess, s_t)
+  v_value = network.run_value(sess, s_t)
+  
+  print "x=", x, " y=", y
+  print "pi=", pi_values
+  print "v=", v_value
+
 
 global_network = GameACNetwork(ACTION_SIZE)
 
@@ -45,6 +58,12 @@ if checkpoint and checkpoint.model_checkpoint_path:
 else:
   print "Could not find old checkpoint"
 
+
+for x in range(10):
+  for y in range(10):
+    calc_value(global_network, x, y)
+
+"""
 game_state = MazeState()
 
 for _ in range(100):
@@ -62,3 +81,4 @@ for _ in range(100):
   game_state.process(action)
 
   game_state.update()
+"""

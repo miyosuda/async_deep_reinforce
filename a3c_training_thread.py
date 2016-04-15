@@ -15,12 +15,13 @@ ACTION_SIZE = 4
 
 from game_ac_network import GameACNetwork
 
-#GAMMA = 0.95
-GAMMA = 0.99
+GAMMA = 0.95
+#GAMMA = 0.99
 LOCAL_T_MAX = 5
 RMSP_EPSILON = 1e-10
 #ENTROPY_BETA = 0.01
-ENTROPY_BETA = 0.001
+ENTROPY_BETA = 0.0
+#ENTROPY_BETA = 0.001
 
 
 
@@ -118,21 +119,22 @@ class A3CTrainingThread(object):
       pi_ = self.local_network.run_policy(sess, self.game_state.s_t)
       action = self.choose_action(pi_)
 
-      states.append(self.game_state.s_t)
-      actions.append(action)
+      states.append(self.game_state.s_t) # action実行前のstateを記録
+      actions.append(action) # 取ったactionを記録
       value_ = self.local_network.run_value(sess, self.game_state.s_t)
       values.append(value_)
 
       if (self.thread_index == 0) and (self.local_t % 100) == 0:
+      #if (self.thread_index == 0) and (self.local_t % 1) == 0:
         print "pi=", pi_
         print " V=", value_
 
-      # gameを実行
+      # actionを実行して、gameを進める
       self.game_state.process(action)
 
       # 実行した結果
-      reward = self.game_state.reward
-      terminal = self.game_state.terminal
+      reward = self.game_state.reward # 実行後の報酬を記録
+      terminal = self.game_state.terminal # 実行後にterminalになったかどうかを記録
 
       self.episode_reward += reward
 
@@ -140,6 +142,7 @@ class A3CTrainingThread(object):
 
       self.local_t += 1
 
+      # s_tを、現在のs_t1で上書き
       self.game_state.update()
       
       if terminal:
@@ -152,13 +155,19 @@ class A3CTrainingThread(object):
     if not terminal_end:
       R = self.local_network.run_value(sess, self.game_state.s_t)
 
-    states.reverse()
+    # ここのreverse修正した
+    actions.reverse()
     rewards.reverse()
+    states.reverse()
+    values.reverse()
+
+    print "------before-----"
 
     # 勾配を算出して加算していく
     for(ai, ri, si, Vi) in zip(actions, rewards, states, values):
       R = ri + GAMMA * R
       td = R - Vi
+
       a = np.zeros([ACTION_SIZE])
       a[ai] = 1
 
@@ -173,12 +182,42 @@ class A3CTrainingThread(object):
                     self.local_network.s: [si],
                     self.local_network.r: [R] } )
 
+      ####
+      pi_values = self.local_network.run_policy(sess, si)
+      print "pi=", pi_values
+      print "action=", ai
+      print "td=", td
+      ####
+
     cur_learning_rate = self._anneal_learning_rate(global_t)
+    ####
+    cur_learning_rate = 0.1
+    ####
 
     sess.run( self.policy_apply_gradients,
               feed_dict = { self.learning_rate_input: cur_learning_rate } )
+
+    """
     sess.run( self.value_apply_gradients,
               feed_dict = { self.learning_rate_input: cur_learning_rate } )
+    """
+
+    ###################
+    ### デバッグで、globalへのセットをここで行っている
+    # 加算された勾配をリセット
+    sess.run( self.policy_reset_gradients )
+    sess.run( self.value_reset_gradients )
+    # shared から localにweightをコピー
+    sess.run( self.sync )
+    ###################
+
+    ###
+    print "------after-----"
+    for(ai, si) in zip(actions, states):
+      pi_values = self.local_network.run_policy(sess, si)
+      print pi_values
+      print "action=", ai
+    ###
 
     if (self.thread_index == 0) and (self.local_t % 100) == 0:
       print "TIMESTEP", self.local_t
