@@ -4,12 +4,11 @@ import numpy as np
 import random
 
 from maze_state import MazeState
-ACTION_SIZE = 4
 from game_ac_network import GameACNetwork
 from a3c_training_thread import A3CTrainingThread
-
-PARALLEL_SIZE = 1
-CHECKPOINT_DIR = 'checkpoints'
+from constants import ACTION_SIZE
+from constants import CHECKPOINT_DIR
+from constants import PARALLEL_SIZE
 
 def choose_action(pi_values):
   values = []
@@ -34,10 +33,10 @@ def calc_value(network, x, y):
   pi_values = network.run_policy(sess, s_t)
   v_value = network.run_value(sess, s_t)
   
-  print "x=", x, " y=", y
-  print "pi=", pi_values
-  print "v=", v_value
-
+  print "x=",x, " y=",y
+  print "pi=",pi_values
+  print "v=",v_value
+  
 
 global_network = GameACNetwork(ACTION_SIZE)
 
@@ -60,25 +59,6 @@ else:
 
 
 for x in range(10):
+  print "------------"
   for y in range(10):
     calc_value(global_network, x, y)
-
-"""
-game_state = MazeState()
-
-for _ in range(100):
-  pi_values = global_network.run_policy(sess, game_state.s_t)
-  v_value = global_network.run_value(sess, game_state.s_t)
-  
-  print "pi_values=", pi_values
-  print "v_value=", v_value
-
-  #print "state=", game_state.s_t
-
-  action = choose_action(pi_values)
-  print "action=", action
-  
-  game_state.process(action)
-
-  game_state.update()
-"""

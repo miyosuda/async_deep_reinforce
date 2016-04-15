@@ -58,7 +58,6 @@ class A3CTrainingThread(object):
     
     self.sync = self.local_network.sync_from(global_network)
     
-    #self.game_state = GameState(113 * thread_index)
     self.game_state = MazeState()
     
     self.local_t = 0
@@ -116,7 +115,6 @@ class A3CTrainingThread(object):
       values.append(value_)
 
       if (self.thread_index == 0) and (self.local_t % 100) == 0:
-      #if (self.thread_index == 0) and (self.local_t % 1) == 0:
         print "pi=", pi_
         print " V=", value_
 
@@ -170,26 +168,22 @@ class A3CTrainingThread(object):
                     self.local_network.s: [si],
                     self.local_network.r: [R] } )
 
-      ####
+      """
       pi_values = self.local_network.run_policy(sess, si)
       print "pi=", pi_values
       print "action=", ai
       print "td=", td
-      ####
+      """
 
     cur_learning_rate = self._anneal_learning_rate(global_t)
-    ####
-    cur_learning_rate = 0.1
-    ####
 
     sess.run( self.policy_apply_gradients,
               feed_dict = { self.learning_rate_input: cur_learning_rate } )
 
-    """
     sess.run( self.value_apply_gradients,
               feed_dict = { self.learning_rate_input: cur_learning_rate } )
-    """
 
+    """
     ###################
     ### デバッグで、globalへのセットをここで行っている
     # 加算された勾配をリセット
@@ -206,6 +200,7 @@ class A3CTrainingThread(object):
       print pi_values
       print "action=", ai
     ###
+    """
 
     if (self.thread_index == 0) and (self.local_t % 100) == 0:
       print "TIMESTEP", self.local_t

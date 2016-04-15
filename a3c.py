@@ -96,5 +96,6 @@ for t in train_threads:
 if not os.path.exists(CHECKPOINT_DIR):
   os.mkdir(CHECKPOINT_DIR)  
 
-###saver.save(sess, CHECKPOINT_DIR + '/' + 'checkpoint', global_step = global_t)
+saver.save(sess, CHECKPOINT_DIR + '/' + 'checkpoint', global_step = global_t)
+
 

@@ -8,32 +8,23 @@ class GameACNetwork(object):
   def __init__(self, action_size):
     with tf.device("/cpu:0"):
       self._action_size = action_size
-      
-      self.W_conv1 = self._weight_variable([3, 3, 1, 16])  # stride=2
-      self.b_conv1 = self._bias_variable([16])
 
-      self.W_conv2 = self._weight_variable([3, 3, 16, 4]) # stride=2
-      self.b_conv2 = self._bias_variable([4])
-
-      self.W_fc1 = self._weight_variable([400, 256])
-      self.b_fc1 = self._bias_variable([256])
+      self.W_fc1 = self._weight_variable([100, 400])
+      self.b_fc1 = self._bias_variable([400])
 
       # weight for policy output layer
-      self.W_fc2 = self._weight_variable([256, action_size])
+      self.W_fc2 = self._weight_variable([400, action_size])
       self.b_fc2 = self._bias_variable([action_size])
 
       # weight for value output layer
-      self.W_fc3 = self._weight_variable([256, 1])
+      self.W_fc3 = self._weight_variable([400, 1])
       self.b_fc3 = self._bias_variable([1])
 
       # state (input)
       self.s = tf.placeholder("float", [1, 10, 10, 1])
-    
-      h_conv1 = tf.nn.relu(self._conv2d(self.s, self.W_conv1, 1) + self.b_conv1)
-      h_conv2 = tf.nn.relu(self._conv2d(h_conv1, self.W_conv2, 1) + self.b_conv2)
-
-      h_conv2_flat = tf.reshape(h_conv2, [1, 400])
-      h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, self.W_fc1) + self.b_fc1)
+      
+      s_flat = tf.reshape(self.s, [1, 100])
+      h_fc1 = tf.nn.relu(tf.matmul(s_flat, self.W_fc1) + self.b_fc1)
 
       # policy (output)
       self.pi = tf.nn.softmax(tf.matmul(h_fc1, self.W_fc2) + self.b_fc2)
@@ -67,16 +58,12 @@ class GameACNetwork(object):
     return v_out[0][0] # output is scalar
 
   def get_policy_vars(self):
-    return [self.W_conv1, self.b_conv1,
-        self.W_conv2, self.b_conv2,
-        self.W_fc1, self.b_fc1,
-        self.W_fc2, self.b_fc2]
+    return [self.W_fc1, self.b_fc1,
+            self.W_fc2, self.b_fc2]
 
   def get_value_vars(self):
-    return [self.W_conv1, self.b_conv1,
-        self.W_conv2, self.b_conv2,
-        self.W_fc1, self.b_fc1,
-        self.W_fc3, self.b_fc3]
+    return [self.W_fc1, self.b_fc1,
+            self.W_fc3, self.b_fc3]
 
   def sync_from(self, src_netowrk, name=None):
     src_policy_vars = src_netowrk.get_policy_vars()
@@ -116,10 +103,6 @@ class GameACNetwork(object):
     np.savetxt('./' + prefix + '_' + name + '.csv', var_val, delimiter=',')
 
   def save(self, sess, prefix):
-    self._save_sub(sess, prefix, self.W_conv1, "W_conv1")
-    self._save_sub(sess, prefix, self.b_conv1, "b_conv1")
-    self._save_sub(sess, prefix, self.W_conv2, "W_conv2")
-    self._save_sub(sess, prefix, self.b_conv2, "b_conv2")
     self._save_sub(sess, prefix, self.W_fc1, "W_fc1")
     self._save_sub(sess, prefix, self.b_fc1, "b_fc1")
     self._save_sub(sess, prefix, self.W_fc2, "W_fc2")
