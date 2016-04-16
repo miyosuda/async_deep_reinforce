@@ -25,7 +25,10 @@ def choose_action(pi_values):
   #fail safe
   return len(values)-1
 
-def calc_value(network, x, y):
+def choose_best_action(pi_values):
+  return np.argmax(pi_values)
+
+def show_value(network, x, y):
   image = np.zeros( (10, 10), dtype=float )
   image[x][y] = 1.0
   s_t = np.reshape(image, (10, 10, 1) )
@@ -37,6 +40,14 @@ def calc_value(network, x, y):
   print "pi=",pi_values
   print "v=",v_value
   
+
+def calc_policy(network, x, y):
+  image = np.zeros( (10, 10), dtype=float )
+  image[x][y] = 1.0
+  s_t = np.reshape(image, (10, 10, 1) )
+  pi_values = network.run_policy(sess, s_t)
+  return pi_values
+
 
 global_network = GameACNetwork(ACTION_SIZE)
 
@@ -61,4 +72,30 @@ else:
 for x in range(10):
   print "------------"
   for y in range(10):
-    calc_value(global_network, x, y)
+    show_value(global_network, x, y)
+
+print "======================="
+
+maze_state = MazeState()
+
+step = 0
+
+print "step=", step, ": x=", maze_state.x, " y=", maze_state.y
+
+for _ in range(1000):
+  step += 1
+  pi = calc_policy(global_network, maze_state.x, maze_state.y)
+  #action = choose_best_action(pi)
+  action = choose_action(pi)
+  maze_state.process(action)
+  print "step=", step, ": x=", maze_state.x, " y=", maze_state.y  
+
+  if maze_state.terminal:
+    print "reached to goal"
+    break
+
+  
+  
+  
+
+
