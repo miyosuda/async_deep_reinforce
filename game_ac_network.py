@@ -9,15 +9,15 @@ class GameACNetwork(object):
     with tf.device("/cpu:0"):
       self._action_size = action_size
 
-      self.W_fc1 = self._weight_variable([100, 400])
-      self.b_fc1 = self._bias_variable([400])
+      self.W_fc1 = self._weight_variable([100, 800])
+      self.b_fc1 = self._bias_variable([800])
 
       # weight for policy output layer
-      self.W_fc2 = self._weight_variable([400, action_size])
+      self.W_fc2 = self._weight_variable([800, action_size])
       self.b_fc2 = self._bias_variable([action_size])
 
       # weight for value output layer
-      self.W_fc3 = self._weight_variable([400, 1])
+      self.W_fc3 = self._weight_variable([800, 1])
       self.b_fc3 = self._bias_variable([1])
 
       # state (input)
