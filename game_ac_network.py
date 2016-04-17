@@ -21,9 +21,9 @@ class GameACNetwork(object):
       self.b_fc3 = self._bias_variable([1])
 
       # state (input)
-      self.s = tf.placeholder("float", [1, 10, 10, 1])
+      self.s = tf.placeholder("float", [None, 10, 10, 1])
       
-      s_flat = tf.reshape(self.s, [1, 100])
+      s_flat = tf.reshape(self.s, [-1, 100])
       h_fc1 = tf.nn.relu(tf.matmul(s_flat, self.W_fc1) + self.b_fc1)
 
       # policy (output)
@@ -34,18 +34,17 @@ class GameACNetwork(object):
   def prepare_loss(self, entropy_beta):
     with tf.device("/cpu:0"):
       # taken action (input for policy)
-      self.a = tf.placeholder("float", [1, self._action_size])
+      self.a = tf.placeholder("float", [None, self._action_size])
     
       # temporary difference (R-V) (input for policy)
-      self.td = tf.placeholder("float", [1])
-      # policy entropy
-      entropy = -tf.reduce_sum(self.pi * tf.log(self.pi))
+      self.td = tf.placeholder("float", [None])
+      entropy = -tf.reduce_sum(self.pi * tf.log(self.pi), reduction_indices=1)
+      
       # policy loss (output)  (add minus, because this is for gradient ascent)
-      # TODO: ここのpolicy_lossのlog(pi)の計算部分が正しいかどうか要検討
-      self.policy_loss = -( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ) ) * self.td + entropy * entropy_beta )
+      self.policy_loss = - tf.reduce_sum( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ), reduction_indices=1 ) * self.td + entropy * entropy_beta )
 
       # R (input for value)
-      self.r = tf.placeholder("float", [1])
+      self.r = tf.placeholder("float", [None])
       # value loss (output)
       self.value_loss = tf.reduce_mean(tf.square(self.r - self.v))
 
