@@ -3,6 +3,7 @@
 LOCAL_T_MAX = 5 # repeat step size
 RMSP_EPSILON = 1e-10 # epsilon parameter for RMSProp
 CHECKPOINT_DIR = 'checkpoints'
+LOG_FILE = 'tmp/a3c_log'
 INITIAL_ALPHA_LOW = 1e-4    # log_uniform low limit for learning rate
 INITIAL_ALPHA_HIGH = 1e-2   # log_uniform high limit for learning rate
 

@@ -18,6 +18,7 @@ from constants import INITIAL_ALPHA_HIGH
 from constants import INITIAL_ALPHA_LOG_RATE
 from constants import MAX_TIME_STEP
 from constants import CHECKPOINT_DIR
+from constants import LOG_FILE
 
 
 def log_uniform(lo, hi, rate):
@@ -48,6 +49,10 @@ sess = tf.Session(config=tf.ConfigProto(log_device_placement=False))
 init = tf.initialize_all_variables()
 sess.run(init)
 
+# summary for tensorboard
+summary_op = tf.merge_all_summaries()
+summary_writer = tf.train.SummaryWriter(LOG_FILE, sess.graph_def)
+
 # init or load checkpoint with saver
 saver = tf.train.Saver()
 checkpoint = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
@@ -61,16 +66,17 @@ def train_function(parallel_index):
   global global_t
   
   training_thread = training_threads[parallel_index]
-  
+
   while True:
     if stop_requested:
       break
     if global_t > MAX_TIME_STEP:
       break
 
-    diff_global_t = training_thread.process(sess, global_t)
+    diff_global_t = training_thread.process(sess, global_t, summary_writer, summary_op)
     global_t += diff_global_t
-
+    
+    
 def signal_handler(signal, frame):
   global stop_requested
   print('You pressed Ctrl+C!')
