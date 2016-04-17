@@ -146,6 +146,11 @@ class A3CTrainingThread(object):
     rewards.reverse()
     values.reverse()
 
+    batch_si = []    
+    batch_a = []
+    batch_td = []
+    batch_R = []
+
     # 勾配を算出して加算していく
     for(ai, ri, si, Vi) in zip(actions, rewards, states, values):
       R = ri + GAMMA * R
@@ -153,16 +158,21 @@ class A3CTrainingThread(object):
       a = np.zeros([ACTION_SIZE])
       a[ai] = 1
 
-      sess.run( self.policy_accum_gradients,
-                feed_dict = {
-                    self.local_network.s: [si],
-                    self.local_network.a: [a],
-                    self.local_network.td: [td] } )
+      batch_si.append(si)
+      batch_a.append(a)
+      batch_td.append(td)
+      batch_R.append(R)
+
+    sess.run( self.policy_accum_gradients,
+              feed_dict = {
+                self.local_network.s: batch_si,
+                self.local_network.a: batch_a,
+                self.local_network.td: batch_td } )
       
-      sess.run( self.value_accum_gradients,
-                feed_dict = {
-                    self.local_network.s: [si],
-                    self.local_network.r: [R] } )
+    sess.run( self.value_accum_gradients,
+              feed_dict = {
+                self.local_network.s: batch_si,
+                self.local_network.r: batch_R } )
 
     cur_learning_rate = self._anneal_learning_rate(global_t)
 
