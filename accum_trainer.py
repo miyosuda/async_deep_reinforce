@@ -39,8 +39,7 @@ class AccumTrainer(object):
     
       with tf.op_scope([], name, self._name) as name:
         for var, grad, accum_grad in zip(self._var_list, self._grad_list, self._accum_grad_list):
-          # TODO: redundant device setting
-          with tf.name_scope("accum_" + var.op.name), tf.device(var.device):
+          with tf.name_scope("accum_" + var.op.name):
             accumulate_ops.append( tf.assign_add(accum_grad, grad) )
         return tf.group(*accumulate_ops, name=name)
 
@@ -50,8 +49,7 @@ class AccumTrainer(object):
 
       with tf.op_scope([], name, self._name) as name:
         for var, accum_grad in zip(self._var_list, self._accum_grad_list):
-          # TODO: redundant device setting
-          with tf.name_scope("reset_" + var.op.name), tf.device(var.device):
+          with tf.name_scope("reset_" + var.op.name):
             zero = tf.zeros(accum_grad.get_shape())
             reset = accum_grad.assign(zero)
             reset_ops.append(reset)
