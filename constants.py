@@ -13,6 +13,6 @@ ROM = "pong.bin"     # action size = 3
 ACTION_SIZE = 3 # action size
 
 INITIAL_ALPHA_LOG_RATE = 0.5 # log_uniform interpolate rate for learning rate
-GAMMA = 0.99 # discount factor for rewards
-ENTROPY_BETA = 0.01 # entropy regurarlization constant
-MAX_TIME_STEP = 4000000 * 8 # 
+GAMMA = 0.95 # discount factor for rewards
+ENTROPY_BETA = 0.1 # entropy regurarlization constant
+MAX_TIME_STEP = 6 * 10**7
