@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-LOCAL_T_MAX = 5 # repeat step size
+LOCAL_T_MAX = 20 # repeat step size
 RMSP_EPSILON = 1e-10 # epsilon parameter for RMSProp
 CHECKPOINT_DIR = 'checkpoints'
 LOG_FILE = 'tmp/a3c_log'
@@ -12,7 +12,7 @@ ROM = "pong.bin"     # action size = 3
 #ROM = "breakout.bin" # action size = 4
 ACTION_SIZE = 3 # action size
 
-INITIAL_ALPHA_LOG_RATE = 0.5 # log_uniform interpolate rate for learning rate
-GAMMA = 0.95 # discount factor for rewards
+INITIAL_ALPHA_LOG_RATE = 0.4226 # log_uniform interpolate rate for learning rate (around 7 * 10^-4)
+GAMMA = 0.99 # discount factor for rewards
 ENTROPY_BETA = 0.1 # entropy regurarlization constant
 MAX_TIME_STEP = 6 * 10**7
