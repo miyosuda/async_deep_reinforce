@@ -13,6 +13,7 @@ from constants import GAMMA
 from constants import LOCAL_T_MAX
 from constants import RMSP_EPSILON
 from constants import ENTROPY_BETA
+from constants import GRAD_NORM_CLIP
 
 class A3CTrainingThread(object):
   def __init__(self, thread_index, global_network, initial_learning_rate, max_global_time_step):
@@ -27,7 +28,9 @@ class A3CTrainingThread(object):
     # policy
     self.policy_trainer = AccumTrainer()
     self.policy_trainer.prepare_minimize( self.local_network.policy_loss,
-                                          self.local_network.get_policy_vars() )
+                                          self.local_network.get_policy_vars(),
+                                          GRAD_NORM_CLIP )
+    
     self.policy_accum_gradients = self.policy_trainer.accumulate_gradients()
     self.policy_reset_gradients = self.policy_trainer.reset_gradients()
   
@@ -42,7 +45,8 @@ class A3CTrainingThread(object):
     # value
     self.value_trainer = AccumTrainer()
     self.value_trainer.prepare_minimize( self.local_network.value_loss,
-                                         self.local_network.get_value_vars() )
+                                         self.local_network.get_value_vars(),
+                                         GRAD_NORM_CLIP )
     self.value_accum_gradients = self.value_trainer.accumulate_gradients()
     self.value_reset_gradients = self.value_trainer.reset_gradients()
   
