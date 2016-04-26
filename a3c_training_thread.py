@@ -181,8 +181,9 @@ class A3CTrainingThread(object):
 
     sess.run( self.policy_apply_gradients,
               feed_dict = { self.learning_rate_input: cur_learning_rate } )
+    # Learning rate for Critic is half of Actor's
     sess.run( self.value_apply_gradients,
-              feed_dict = { self.learning_rate_input: cur_learning_rate } )
+              feed_dict = { self.learning_rate_input: cur_learning_rate * 0.5 } )
 
     if (self.thread_index == 0) and (self.local_t % 100) == 0:
       print "TIMESTEP", self.local_t
