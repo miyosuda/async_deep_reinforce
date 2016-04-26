@@ -10,6 +10,7 @@ import os
 
 from game_ac_network import GameACNetwork
 from a3c_training_thread import A3CTrainingThread
+from rmsprop_applier import RMSPropApplier
 
 from constants import ACTION_SIZE
 from constants import PARALLEL_SIZE
@@ -19,6 +20,7 @@ from constants import INITIAL_ALPHA_LOG_RATE
 from constants import MAX_TIME_STEP
 from constants import CHECKPOINT_DIR
 from constants import LOG_FILE
+from constants import RMSP_EPSILON
 
 
 def log_uniform(lo, hi, rate):
@@ -39,8 +41,22 @@ global_network = GameACNetwork(ACTION_SIZE)
 
 training_threads = []
 
+learning_rate_input = tf.placeholder("float")
+
+policy_applier = RMSPropApplier(learning_rate = learning_rate_input,
+                                decay = 0.99,
+                                momentum = 0.0,
+                                epsilon = RMSP_EPSILON )
+
+value_applier = RMSPropApplier(learning_rate = learning_rate_input,
+                               decay = 0.99,
+                               momentum = 0.0,
+                               epsilon = RMSP_EPSILON )
+
 for i in range(PARALLEL_SIZE):
-  training_thread = A3CTrainingThread(i, global_network, initial_learning_rate, MAX_TIME_STEP)
+  training_thread = A3CTrainingThread(i, global_network, initial_learning_rate,
+                                      learning_rate_input,
+                                      policy_applier, value_applier, MAX_TIME_STEP)
   training_threads.append(training_thread)
 
 # prepare session

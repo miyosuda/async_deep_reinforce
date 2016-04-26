@@ -4,22 +4,23 @@ import numpy as np
 import random
 
 from accum_trainer import AccumTrainer
-from rmsprop_applier import RMSPropApplier
 from game_state import GameState
 from game_state import ACTION_SIZE
 from game_ac_network import GameACNetwork
 
 from constants import GAMMA
 from constants import LOCAL_T_MAX
-from constants import RMSP_EPSILON
 from constants import ENTROPY_BETA
 from constants import GRAD_NORM_CLIP
 
 class A3CTrainingThread(object):
-  def __init__(self, thread_index, global_network, initial_learning_rate, max_global_time_step):
+  def __init__(self, thread_index, global_network, initial_learning_rate,
+               learning_rate_input,
+               policy_applier, value_applier,
+               max_global_time_step):
 
     self.thread_index = thread_index
-    self.learning_rate_input = tf.placeholder("float")
+    self.learning_rate_input = learning_rate_input
     self.max_global_time_step = max_global_time_step
 
     self.local_network = GameACNetwork(ACTION_SIZE)
@@ -34,11 +35,7 @@ class A3CTrainingThread(object):
     self.policy_accum_gradients = self.policy_trainer.accumulate_gradients()
     self.policy_reset_gradients = self.policy_trainer.reset_gradients()
   
-    self.policy_applier = RMSPropApplier(learning_rate = self.learning_rate_input,
-                                         decay = 0.99,
-                                         momentum = 0.0,
-                                         epsilon = RMSP_EPSILON )
-    self.policy_apply_gradients = self.policy_applier.apply_gradients(
+    self.policy_apply_gradients = policy_applier.apply_gradients(
         global_network.get_policy_vars(),
         self.policy_trainer.get_accum_grad_list() )
 
@@ -50,11 +47,8 @@ class A3CTrainingThread(object):
     self.value_accum_gradients = self.value_trainer.accumulate_gradients()
     self.value_reset_gradients = self.value_trainer.reset_gradients()
   
-    self.value_applier = RMSPropApplier(learning_rate = self.learning_rate_input,
-                                        decay = 0.99,
-                                        momentum = 0.0,
-                                        epsilon = RMSP_EPSILON )
-    self.value_apply_gradients = self.value_applier.apply_gradients(
+
+    self.value_apply_gradients = value_applier.apply_gradients(
         global_network.get_value_vars(),
         self.value_trainer.get_accum_grad_list() )
     
