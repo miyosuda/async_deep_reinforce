@@ -111,7 +111,7 @@ class A3CTrainingThread(object):
 
     start_local_t = self.local_t
     
-    # 5回ループ
+    # t_max times loop
     for i in range(LOCAL_T_MAX):
       pi_ = self.local_network.run_policy(sess, self.game_state.s_t)
       action = self.choose_action(pi_)

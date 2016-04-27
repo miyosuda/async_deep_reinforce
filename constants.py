@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-LOCAL_T_MAX = 5 # repeat step size
+LOCAL_T_MAX = 17 # repeat step size
 RMSP_EPSILON = 1e-10 # epsilon parameter for RMSProp
 CHECKPOINT_DIR = 'checkpoints'
 LOG_FILE = 'tmp/a3c_log'
