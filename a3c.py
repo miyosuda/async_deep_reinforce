@@ -21,6 +21,7 @@ from constants import MAX_TIME_STEP
 from constants import CHECKPOINT_DIR
 from constants import LOG_FILE
 from constants import RMSP_EPSILON
+from constants import RMSP_ALPHA
 
 
 def log_uniform(lo, hi, rate):
@@ -44,12 +45,12 @@ training_threads = []
 learning_rate_input = tf.placeholder("float")
 
 policy_applier = RMSPropApplier(learning_rate = learning_rate_input,
-                                decay = 0.99,
+                                decay = RMSP_ALPHA,
                                 momentum = 0.0,
                                 epsilon = RMSP_EPSILON )
 
 value_applier = RMSPropApplier(learning_rate = learning_rate_input,
-                               decay = 0.99,
+                               decay = RMSP_ALPHA,
                                momentum = 0.0,
                                epsilon = RMSP_EPSILON )
 
