@@ -54,8 +54,12 @@ class GameState(object):
   def process(self, action):
     # 18種類のうちの実際に利用するactionに変換
     real_action = self.real_actions[action]
-    self.reward = self.ale.act(real_action)
-    #self.reward = self.ale.act(action)
+
+    r = 0
+    for _ in range(4):
+      r += self.ale.act(real_action)
+    
+    self.reward = np.sign(r)
     self.terminal = self.ale.game_over()
     
     # screenのshapeは、(210, 160, 1)
