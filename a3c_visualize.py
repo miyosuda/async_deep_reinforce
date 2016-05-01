@@ -9,16 +9,36 @@ import random
 from game_state import GameState
 from game_ac_network import GameACNetwork
 from a3c_training_thread import A3CTrainingThread
-from constants import ACTION_SIZE
+from rmsprop_applier import RMSPropApplier
 
-PARALLEL_SIZE = 8
-CHECKPOINT_DIR = 'checkpoints'
+from constants import ACTION_SIZE
+from constants import PARALLEL_SIZE
+from constants import MAX_TIME_STEP
+from constants import CHECKPOINT_DIR
+from constants import RMSP_EPSILON
+from constants import RMSP_ALPHA
+
 
 global_network = GameACNetwork(ACTION_SIZE)
 
 training_threads = []
+
+learning_rate_input = tf.placeholder("float")
+
+policy_applier = RMSPropApplier(learning_rate = learning_rate_input,
+                                decay = RMSP_ALPHA,
+                                momentum = 0.0,
+                                epsilon = RMSP_EPSILON )
+
+value_applier = RMSPropApplier(learning_rate = learning_rate_input,
+                               decay = RMSP_ALPHA,
+                               momentum = 0.0,
+                               epsilon = RMSP_EPSILON )
+
 for i in range(PARALLEL_SIZE):
-  training_thread = A3CTrainingThread(i, global_network, 1.0, 8000000)
+  training_thread = A3CTrainingThread(i, global_network, 1.0,
+                                      learning_rate_input,
+                                      policy_applier, value_applier, MAX_TIME_STEP )
   training_threads.append(training_thread)
 
 sess = tf.Session()
