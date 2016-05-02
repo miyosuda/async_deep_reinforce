@@ -76,8 +76,13 @@ checkpoint = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
 if checkpoint and checkpoint.model_checkpoint_path:
   saver.restore(sess, checkpoint.model_checkpoint_path)
   print "checkpoint loaded:", checkpoint.model_checkpoint_path
+  tokens = checkpoint.model_checkpoint_path.split("-")
+  # set global step
+  global_t = int(tokens[1])
+  print ">>> global step set: ", global_t
 else:
   print "Could not find old checkpoint"
+
 
 def train_function(parallel_index):
   global global_t
