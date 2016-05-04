@@ -55,7 +55,7 @@ class GameACNetwork(object):
       # R (input for value)
       self.r = tf.placeholder("float", [1])
       # value loss (output)
-      self.value_loss = tf.reduce_mean(tf.square(self.r - self.v))
+      self.value_loss = tf.nn.l2_loss(self.r - self.v)
 
   def run_policy(self, sess, s_t):
     pi_out = sess.run( self.pi, feed_dict = {self.s : [s_t]} )
