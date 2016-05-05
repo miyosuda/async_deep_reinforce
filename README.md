@@ -8,9 +8,9 @@ An attempt to repdroduce Google Deep Mind's paper "Asynchronous Methods for Deep
 
 http://arxiv.org/abs/1602.01783
 
-Asynchronous Advantage Actor-Critic (A3C) method for playing "Atari Pong" is now implemented as a test with TensorFlow.
+Asynchronous Advantage Actor-Critic (A3C) method for playing "Atari Pong" is implemented with TensorFlow.
 
-Learning result movment after 24 hour is like this.
+Learning result movment after 24 hour is like this. (click image below to preview)
 
 [![Learning result after 24 hour](https://img.youtube.com/vi/cFWL_y9BVaQ/0.jpg)](https://www.youtube.com/watch?v=cFWL_y9BVaQ)
 
