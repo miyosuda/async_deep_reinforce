@@ -10,8 +10,13 @@ http://arxiv.org/abs/1602.01783
 
 Asynchronous Advantage Actor-Critic (A3C) method for playing "Atari Pong" is now implemented as a test with TensorFlow.
 
-(However the learning result is still not good. I'm now investigating about the problem. Any advice or suggestion is strongly welcomed.)
+Learning result movment after 24 hour is like this.
 
+[![Learning result after 24 hour](https://img.youtube.com/vi/cFWL_y9BVaQ/0.jpg)](https://www.youtube.com/watch?v=cFWL_y9BVaQ)
+
+Any advice or suggestion is strongly welcomed in issues thread.
+
+https://github.com/miyosuda/async_deep_reinforce/issues/1
 
 ## How to build
 
