@@ -55,7 +55,6 @@ class GameState(object):
     # 18種類のうちの実際に利用するactionに変換
     real_action = self.real_actions[action]
     self.reward = self.ale.act(real_action)
-    #self.reward = self.ale.act(action)
     self.terminal = self.ale.game_over()
     
     # screenのshapeは、(210, 160, 1)
