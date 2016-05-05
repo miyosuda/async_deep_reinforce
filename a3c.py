@@ -10,6 +10,7 @@ import os
 
 from game_ac_network import GameACNetwork
 from a3c_training_thread import A3CTrainingThread
+from rmsprop_applier import RMSPropApplier
 
 from constants import ACTION_SIZE
 from constants import PARALLEL_SIZE
@@ -18,6 +19,9 @@ from constants import INITIAL_ALPHA_HIGH
 from constants import INITIAL_ALPHA_LOG_RATE
 from constants import MAX_TIME_STEP
 from constants import CHECKPOINT_DIR
+from constants import LOG_FILE
+from constants import RMSP_EPSILON
+from constants import RMSP_ALPHA
 
 
 def log_uniform(lo, hi, rate):
@@ -38,8 +42,22 @@ global_network = GameACNetwork(ACTION_SIZE)
 
 training_threads = []
 
+learning_rate_input = tf.placeholder("float")
+
+policy_applier = RMSPropApplier(learning_rate = learning_rate_input,
+                                decay = RMSP_ALPHA,
+                                momentum = 0.0,
+                                epsilon = RMSP_EPSILON )
+
+value_applier = RMSPropApplier(learning_rate = learning_rate_input,
+                               decay = RMSP_ALPHA,
+                               momentum = 0.0,
+                               epsilon = RMSP_EPSILON )
+
 for i in range(PARALLEL_SIZE):
-  training_thread = A3CTrainingThread(i, global_network, initial_learning_rate, MAX_TIME_STEP)
+  training_thread = A3CTrainingThread(i, global_network, initial_learning_rate,
+                                      learning_rate_input,
+                                      policy_applier, value_applier, MAX_TIME_STEP)
   training_threads.append(training_thread)
 
 # prepare session
@@ -48,29 +66,39 @@ sess = tf.Session(config=tf.ConfigProto(log_device_placement=False))
 init = tf.initialize_all_variables()
 sess.run(init)
 
+# summary for tensorboard
+summary_op = tf.merge_all_summaries()
+summary_writer = tf.train.SummaryWriter(LOG_FILE, sess.graph_def)
+
 # init or load checkpoint with saver
 saver = tf.train.Saver()
 checkpoint = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
 if checkpoint and checkpoint.model_checkpoint_path:
   saver.restore(sess, checkpoint.model_checkpoint_path)
   print "checkpoint loaded:", checkpoint.model_checkpoint_path
+  tokens = checkpoint.model_checkpoint_path.split("-")
+  # set global step
+  global_t = int(tokens[1])
+  print ">>> global step set: ", global_t
 else:
   print "Could not find old checkpoint"
+
 
 def train_function(parallel_index):
   global global_t
   
   training_thread = training_threads[parallel_index]
-  
+
   while True:
     if stop_requested:
       break
     if global_t > MAX_TIME_STEP:
       break
 
-    diff_global_t = training_thread.process(sess, global_t)
+    diff_global_t = training_thread.process(sess, global_t, summary_writer, summary_op)
     global_t += diff_global_t
-
+    
+    
 def signal_handler(signal, frame):
   global stop_requested
   print('You pressed Ctrl+C!')

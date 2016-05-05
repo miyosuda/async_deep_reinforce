@@ -36,3 +36,8 @@ To train,
 To display the result with game play,
 
     $python a3c_disp.py
+
+## Acknowledgements
+
+- [@aravindsrinivas](https://github.com/aravindsrinivas) for providing information for some of the hyper parameters.
+
