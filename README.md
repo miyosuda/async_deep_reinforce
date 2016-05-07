@@ -12,7 +12,7 @@ Asynchronous Advantage Actor-Critic (A3C) method for playing "Atari Pong" is imp
 
 Learning result movment after 24 hour is like this. (click image below to preview)
 
-[![Learning result after 24 hour](https://img.youtube.com/vi/cFWL_y9BVaQ/0.jpg)](https://www.youtube.com/watch?v=cFWL_y9BVaQ)
+[![Learning result after 24 hour](http://narr.jp/private/miyoshi/deep_learning/a3c_preview_image.jpg)](https://www.youtube.com/watch?v=cFWL_y9BVaQ)
 
 Any advice or suggestion is strongly welcomed in issues thread.
 
