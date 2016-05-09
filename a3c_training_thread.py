@@ -175,11 +175,11 @@ class A3CTrainingThread(object):
 
     cur_learning_rate = self._anneal_learning_rate(global_t)
 
+    # Learning rate for Actor is half of Critic's
     sess.run( self.policy_apply_gradients,
-              feed_dict = { self.learning_rate_input: cur_learning_rate } )
-    # Learning rate for Critic is half of Actor's
+              feed_dict = { self.learning_rate_input: cur_learning_rate * 0.5} )
     sess.run( self.value_apply_gradients,
-              feed_dict = { self.learning_rate_input: cur_learning_rate * 0.5 } )
+              feed_dict = { self.learning_rate_input: cur_learning_rate } )
 
     if (self.thread_index == 0) and (self.local_t % 100) == 0:
       print "TIMESTEP", self.local_t
