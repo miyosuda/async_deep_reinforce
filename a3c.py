@@ -44,6 +44,7 @@ training_threads = []
 
 learning_rate_input = tf.placeholder("float")
 
+# TODO unify two RMSPropApplier into one
 policy_applier = RMSPropApplier(learning_rate = learning_rate_input,
                                 decay = RMSP_ALPHA,
                                 momentum = 0.0,

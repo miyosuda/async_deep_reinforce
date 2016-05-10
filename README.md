@@ -39,9 +39,8 @@ To display the result with game play,
 
 ## References
 
-This project is using some hyper parameters that appear in
+This project uses setting written in muupan's wiki [muuupan/async-rl] (https://github.com/muupan/async-rl/wiki)
 
-[muuupan/async-rl] (https://github.com/muupan/async-rl)
 
 ## Acknowledgements
 
