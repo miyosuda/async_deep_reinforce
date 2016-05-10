@@ -139,6 +139,7 @@ class A3CTrainingThread(object):
 
       self.local_t += 1
 
+      # s_t1 -> s_t
       self.game_state.update()
       
       if terminal:
@@ -149,6 +150,7 @@ class A3CTrainingThread(object):
           self._record_score(sess, summary_writer, summary_op, self.episode_reward, global_t)
           
         self.episode_reward = 0
+        self.game_state.reset()
         break
 
     R = 0.0
