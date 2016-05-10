@@ -68,6 +68,9 @@ init = tf.initialize_all_variables()
 sess.run(init)
 
 # summary for tensorboard
+score_input = tf.placeholder(tf.int32)
+tf.scalar_summary("score", score_input)
+
 summary_op = tf.merge_all_summaries()
 summary_writer = tf.train.SummaryWriter(LOG_FILE, sess.graph_def)
 
@@ -96,7 +99,8 @@ def train_function(parallel_index):
     if global_t > MAX_TIME_STEP:
       break
 
-    diff_global_t = training_thread.process(sess, global_t, summary_writer, summary_op)
+    diff_global_t = training_thread.process(sess, global_t, summary_writer,
+                                            summary_op, score_input)
     global_t += diff_global_t
     
     

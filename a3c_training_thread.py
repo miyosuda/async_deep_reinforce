@@ -62,10 +62,6 @@ class A3CTrainingThread(object):
 
     self.episode_reward = 0
 
-    # thread0 will record score for TensorBoard
-    if self.thread_index == 0:
-      self.score_input = tf.placeholder(tf.int32)
-      tf.scalar_summary("score", self.score_input)
 
   def _anneal_learning_rate(self, global_time_step):
     learning_rate = self.initial_learning_rate * (self.max_global_time_step - global_time_step) / self.max_global_time_step
@@ -88,13 +84,13 @@ class A3CTrainingThread(object):
     #fail safe
     return len(values)-1
 
-  def _record_score(self, sess, summary_writer, summary_op, score, global_t):
+  def _record_score(self, sess, summary_writer, summary_op, score_input, score, global_t):
     summary_str = sess.run(summary_op, feed_dict={
-      self.score_input: score
+      score_input: score
     })
     summary_writer.add_summary(summary_str, global_t)
     
-  def process(self, sess, global_t, summary_writer, summary_op):
+  def process(self, sess, global_t, summary_writer, summary_op, score_input):
     states = []
     actions = []
     rewards = []
@@ -146,8 +142,8 @@ class A3CTrainingThread(object):
         terminal_end = True
         print "score=", self.episode_reward
 
-        if self.thread_index == 0:        
-          self._record_score(sess, summary_writer, summary_op, self.episode_reward, global_t)
+        self._record_score(sess, summary_writer, summary_op, score_input,
+                           self.episode_reward, global_t)
           
         self.episode_reward = 0
         self.game_state.reset()
