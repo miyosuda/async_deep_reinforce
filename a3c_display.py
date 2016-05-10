@@ -62,7 +62,7 @@ if checkpoint and checkpoint.model_checkpoint_path:
 else:
   print "Could not find old checkpoint"
 
-game_state = GameState(0, display=True)
+game_state = GameState(0, display=True, no_op_max=0)
 
 while True:
   pi_values = global_network.run_policy(sess, game_state.s_t)

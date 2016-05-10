@@ -19,7 +19,7 @@ class GameState(object):
     self.ale.loadROM(ROM)
 
     # collect minimal action set
-    self.real_actions = self.ale.getMinimalActionSet()    
+    self.real_actions = self.ale.getMinimalActionSet()
 
     # height=210, width=160
     self._screen = np.empty((210, 160, 1), dtype=np.uint8)
