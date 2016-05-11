@@ -8,7 +8,7 @@ from constants import ROM
 from constants import ACTION_SIZE
 
 class GameState(object):
-  def __init__(self, rand_seed, display=False, no_op_max=30):
+  def __init__(self, rand_seed, display=False, no_op_max=7):
     self.ale = ALEInterface()
     self.ale.setInt('random_seed', rand_seed)
     self._no_op_max = no_op_max
