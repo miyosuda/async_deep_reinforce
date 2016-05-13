@@ -72,7 +72,7 @@ class GameState(object):
     x_t1 = x_t1.astype(np.float32)    
     x_t1 *= (1.0/255.0)
     
-    self.s_t1 = np.append(x_t1, self.s_t[:,:,0:3], axis = 2)
+    self.s_t1 = np.append(self.s_t[:,:,1:], x_t1, axis = 2)
     if self.terminal:
       self.ale.reset_game()
 
