@@ -16,7 +16,7 @@ from constants import GRAD_NORM_CLIP
 class A3CTrainingThread(object):
   def __init__(self, thread_index, global_network, initial_learning_rate,
                learning_rate_input,
-               policy_applier, value_applier,
+               grad_applier,
                max_global_time_step):
 
     self.thread_index = thread_index
@@ -26,32 +26,18 @@ class A3CTrainingThread(object):
     self.local_network = GameACNetwork(ACTION_SIZE)
     self.local_network.prepare_loss(ENTROPY_BETA)
 
-    # policy
-    self.policy_trainer = AccumTrainer()
-    self.policy_trainer.prepare_minimize( self.local_network.policy_loss,
-                                          self.local_network.get_policy_vars(),
-                                          GRAD_NORM_CLIP )
+    self.trainer = AccumTrainer()
+    self.trainer.prepare_minimize( self.local_network.total_loss,
+                                   self.local_network.get_vars(),
+                                   GRAD_NORM_CLIP )
     
-    self.policy_accum_gradients = self.policy_trainer.accumulate_gradients()
-    self.policy_reset_gradients = self.policy_trainer.reset_gradients()
+    self.accum_gradients = self.trainer.accumulate_gradients()
+    self.reset_gradients = self.trainer.reset_gradients()
   
-    self.policy_apply_gradients = policy_applier.apply_gradients(
-        global_network.get_policy_vars(),
-        self.policy_trainer.get_accum_grad_list() )
+    self.apply_gradients = grad_applier.apply_gradients(
+      global_network.get_vars(),
+      self.trainer.get_accum_grad_list() )
 
-    # value
-    self.value_trainer = AccumTrainer()
-    self.value_trainer.prepare_minimize( self.local_network.value_loss,
-                                         self.local_network.get_value_vars(),
-                                         GRAD_NORM_CLIP )
-    self.value_accum_gradients = self.value_trainer.accumulate_gradients()
-    self.value_reset_gradients = self.value_trainer.reset_gradients()
-  
-
-    self.value_apply_gradients = value_applier.apply_gradients(
-        global_network.get_value_vars(),
-        self.value_trainer.get_accum_grad_list() )
-    
     self.sync = self.local_network.sync_from(global_network)
     
     self.game_state = GameState(113 * thread_index)
@@ -98,11 +84,10 @@ class A3CTrainingThread(object):
 
     terminal_end = False
 
-    # 加算された勾配をリセット
-    sess.run( self.policy_reset_gradients )
-    sess.run( self.value_reset_gradients )
+    # reset accumulated gradients
+    sess.run( self.reset_gradients )
 
-    # shared から localにweightをコピー
+    # copy weights from shared to local
     sess.run( self.sync )
 
     start_local_t = self.local_t
@@ -121,10 +106,10 @@ class A3CTrainingThread(object):
         print "pi=", pi_
         print " V=", value_
 
-      # gameを実行
+      # process game
       self.game_state.process(action)
 
-      # 実行した結果
+      # receive game result
       reward = self.game_state.reward
       terminal = self.game_state.terminal
 
@@ -155,30 +140,23 @@ class A3CTrainingThread(object):
     rewards.reverse()
     values.reverse()
 
-    # 勾配を算出して加算していく
+    # compute and accmulate gradients
     for(ai, ri, si, Vi) in zip(actions, rewards, states, values):
       R = ri + GAMMA * R
       td = R - Vi
       a = np.zeros([ACTION_SIZE])
       a[ai] = 1
 
-      sess.run( self.policy_accum_gradients,
+      sess.run( self.accum_gradients,
                 feed_dict = {
-                    self.local_network.s: [si],
-                    self.local_network.a: [a],
-                    self.local_network.td: [td] } )
+                  self.local_network.s: [si],
+                  self.local_network.a: [a],
+                  self.local_network.td: [td],
+                  self.local_network.r: [R]} )
       
-      sess.run( self.value_accum_gradients,
-                feed_dict = {
-                    self.local_network.s: [si],
-                    self.local_network.r: [R] } )
-
     cur_learning_rate = self._anneal_learning_rate(global_t)
 
-    # Learning rate for Actor is half of Critic's
-    sess.run( self.policy_apply_gradients,
-              feed_dict = { self.learning_rate_input: cur_learning_rate * 0.5} )
-    sess.run( self.value_apply_gradients,
+    sess.run( self.apply_gradients,
               feed_dict = { self.learning_rate_input: cur_learning_rate } )
 
     if (self.thread_index == 0) and (self.local_t % 100) == 0:

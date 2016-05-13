@@ -25,20 +25,15 @@ training_threads = []
 
 learning_rate_input = tf.placeholder("float")
 
-policy_applier = RMSPropApplier(learning_rate = learning_rate_input,
-                                decay = RMSP_ALPHA,
-                                momentum = 0.0,
-                                epsilon = RMSP_EPSILON )
-
-value_applier = RMSPropApplier(learning_rate = learning_rate_input,
-                               decay = RMSP_ALPHA,
-                               momentum = 0.0,
-                               epsilon = RMSP_EPSILON )
+grad_applier = RMSPropApplier(learning_rate = learning_rate_input,
+                              decay = RMSP_ALPHA,
+                              momentum = 0.0,
+                              epsilon = RMSP_EPSILON )
 
 for i in range(PARALLEL_SIZE):
   training_thread = A3CTrainingThread(i, global_network, 1.0,
                                       learning_rate_input,
-                                      policy_applier, value_applier, MAX_TIME_STEP )
+                                      grad_applier, MAX_TIME_STEP )
   training_threads.append(training_thread)
 
 sess = tf.Session()

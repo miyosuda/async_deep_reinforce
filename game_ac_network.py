@@ -49,13 +49,19 @@ class GameACNetwork(object):
       self.td = tf.placeholder("float", [1])
       # policy entropy
       entropy = -tf.reduce_sum(self.pi * tf.log(self.pi))
+
       # policy loss (output)  (add minus, because this is for gradient ascent)
-      self.policy_loss = -( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ) ) * self.td + entropy * entropy_beta )
+      # (Learning rate for Actor is half of Critic's, so multiply by 0.5)
+      policy_loss = -0.5 * ( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ) ) * self.td +
+                             entropy * entropy_beta )
 
       # R (input for value)
       self.r = tf.placeholder("float", [1])
       # value loss (output)
-      self.value_loss = tf.nn.l2_loss(self.r - self.v)
+      value_loss = tf.nn.l2_loss(self.r - self.v)
+
+      # gradienet of policy and value are summed up
+      self.total_loss = policy_loss + value_loss
 
   def run_policy(self, sess, s_t):
     pi_out = sess.run( self.pi, feed_dict = {self.s : [s_t]} )
@@ -65,37 +71,25 @@ class GameACNetwork(object):
     v_out = sess.run( self.v, feed_dict = {self.s : [s_t]} )
     return v_out[0][0] # output is scalar
 
-  def get_policy_vars(self):
+  def get_vars(self):
     return [self.W_conv1, self.b_conv1,
-        self.W_conv2, self.b_conv2,
-        self.W_fc1, self.b_fc1,
-        self.W_fc2, self.b_fc2]
-
-  def get_value_vars(self):
-    return [self.W_conv1, self.b_conv1,
-        self.W_conv2, self.b_conv2,
-        self.W_fc1, self.b_fc1,
-        self.W_fc3, self.b_fc3]
+            self.W_conv2, self.b_conv2,
+            self.W_fc1, self.b_fc1,
+            self.W_fc2, self.b_fc2,
+            self.W_fc3, self.b_fc3]
 
   def sync_from(self, src_netowrk, name=None):
-    src_policy_vars = src_netowrk.get_policy_vars()
-    src_value_vars = src_netowrk.get_value_vars()
-      
-    dst_policy_vars = self.get_policy_vars()
-    dst_value_vars = self.get_value_vars()
+    src_vars = src_netowrk.get_vars()
+    dst_vars = self.get_vars()
 
     sync_ops = []
 
-    with tf.device("/cpu:0"):    
+    with tf.device("/cpu:0"):
       with tf.op_scope([], name, "GameACNetwork") as name:
-        for(src_policy_var, dst_policy_var) in zip(src_policy_vars, dst_policy_vars):
-          sync_op = tf.assign(dst_policy_var, src_policy_var)
+        for(src_var, dst_var) in zip(src_vars, dst_vars):
+          sync_op = tf.assign(dst_var, src_var)
           sync_ops.append(sync_op)
 
-        for(src_value_var, dst_value_var) in zip(src_value_vars, dst_value_vars):
-          sync_op = tf.assign(dst_value_var, src_value_var)
-          sync_ops.append(sync_op)
-      
         return tf.group(*sync_ops, name=name)
 
   def _weight_variable(self, shape):
@@ -109,12 +103,12 @@ class GameACNetwork(object):
   def _conv2d(self, x, W, stride):
     return tf.nn.conv2d(x, W, strides = [1, stride, stride, 1], padding = "VALID")
 
-  def _save_sub(self, sess, prefix, var, name):
+  def _debug_save_sub(self, sess, prefix, var, name):
     var_val = var.eval(sess)
     var_val = np.reshape(var_val, (1, np.product(var_val.shape)))        
     np.savetxt('./' + prefix + '_' + name + '.csv', var_val, delimiter=',')
 
-  def save(self, sess, prefix):
+  def debug_save(self, sess, prefix):
     self._save_sub(sess, prefix, self.W_conv1, "W_conv1")
     self._save_sub(sess, prefix, self.b_conv1, "b_conv1")
     self._save_sub(sess, prefix, self.W_conv2, "W_conv2")
