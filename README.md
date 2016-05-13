@@ -42,6 +42,11 @@ To display the result with game play,
 
     $python a3c_disp.py
 
+## References
+
+This project uses setting written in muupan's wiki [muuupan/async-rl] (https://github.com/muupan/async-rl/wiki)
+
+
 ## Acknowledgements
 
 - [@aravindsrinivas](https://github.com/aravindsrinivas) for providing information for some of the hyper parameters.
