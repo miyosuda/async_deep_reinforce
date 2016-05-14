@@ -42,6 +42,8 @@ class AccumTrainerTest(tf.test.TestCase):
 
       # accum_gradがゼロになっているのを確認
       self.assertAllClose([0.0, 0.0], accum_grad0.eval())
+
+  # TODO: gradient clipping test
       
 
 if __name__ == "__main__":

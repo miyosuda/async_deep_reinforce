@@ -11,7 +11,6 @@ from game_ac_network import GameACNetwork
 from constants import GAMMA
 from constants import LOCAL_T_MAX
 from constants import ENTROPY_BETA
-from constants import GRAD_NORM_CLIP
 
 class A3CTrainingThread(object):
   def __init__(self, thread_index, global_network, initial_learning_rate,
@@ -28,8 +27,7 @@ class A3CTrainingThread(object):
 
     self.trainer = AccumTrainer()
     self.trainer.prepare_minimize( self.local_network.total_loss,
-                                   self.local_network.get_vars(),
-                                   GRAD_NORM_CLIP )
+                                   self.local_network.get_vars() )
     
     self.accum_gradients = self.trainer.accumulate_gradients()
     self.reset_gradients = self.trainer.reset_gradients()

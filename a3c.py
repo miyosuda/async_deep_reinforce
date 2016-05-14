@@ -22,6 +22,7 @@ from constants import CHECKPOINT_DIR
 from constants import LOG_FILE
 from constants import RMSP_EPSILON
 from constants import RMSP_ALPHA
+from constants import GRAD_NORM_CLIP
 
 
 def log_uniform(lo, hi, rate):
@@ -47,7 +48,8 @@ learning_rate_input = tf.placeholder("float")
 grad_applier = RMSPropApplier(learning_rate = learning_rate_input,
                               decay = RMSP_ALPHA,
                               momentum = 0.0,
-                              epsilon = RMSP_EPSILON )
+                              epsilon = RMSP_EPSILON,
+                              clip_norm = GRAD_NORM_CLIP )
 
 for i in range(PARALLEL_SIZE):
   training_thread = A3CTrainingThread(i, global_network, initial_learning_rate,
