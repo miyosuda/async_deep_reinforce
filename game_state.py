@@ -8,39 +8,44 @@ from constants import ROM
 from constants import ACTION_SIZE
 
 class GameState(object):
-  def __init__(self, rand_seed, display=False):
+  def __init__(self, rand_seed, display=False, no_op_max=7):
     self.ale = ALEInterface()
     self.ale.setInt('random_seed', rand_seed)
+    self._no_op_max = no_op_max
 
     if display:
       self._setup_display()
     
     self.ale.loadROM(ROM)
 
-    # height=210, width=160
-    self.screen = np.empty((210, 160, 1), dtype=np.uint8)
-    
-    no_action = 0
-    
-    self.reward = self.ale.act(no_action)
-    self.terminal = self.ale.game_over()
+    # collect minimal action set
+    self.real_actions = self.ale.getMinimalActionSet()
 
-    # screenのshapeは、(210, 160, 1)
-    self.ale.getScreenGrayscale(self.screen)
+    # height=210, width=160
+    self._screen = np.empty((210, 160, 1), dtype=np.uint8)
+
+    self.reset()
+
+  def _process_frame(self, action, reshape):
+    reward = self.ale.act(action)
+    terminal = self.ale.game_over()
+
+    # screen shape is (210, 160, 1)
+    self.ale.getScreenGrayscale(self._screen)
     
-    # (210, 160)にreshape
-    reshaped_screen = np.reshape(self.screen, (210, 160))
+    # reshape it into (210, 160)
+    reshaped_screen = np.reshape(self._screen, (210, 160))
     
-    # height=110, width=84にリサイズ
+    # resize to height=110, width=84
     resized_screen = cv2.resize(reshaped_screen, (84, 110))
     
     x_t = resized_screen[18:102,:]
+    if reshape:
+      x_t = np.reshape(x_t, (84, 84, 1))
     x_t = x_t.astype(np.float32)
     x_t *= (1.0/255.0)
-    self.s_t = np.stack((x_t, x_t, x_t, x_t), axis = 2)
-
-    # 実際に利用するactionのみを集めておく
-    self.real_actions = self.ale.getMinimalActionSet()
+    return reward, terminal, x_t
+    
     
   def _setup_display(self):
     if sys.platform == 'darwin':
@@ -50,31 +55,31 @@ class GameState(object):
     elif sys.platform.startswith('linux'):
       self.ale.setBool('sound', True)
     self.ale.setBool('display_screen', True)
+
+  def reset(self):
+    self.ale.reset_game()
+    
+    # randomize initial state
+    if self._no_op_max > 0:
+      no_op = np.random.randint(0, self._no_op_max + 1)
+      for _ in range(no_op):
+        self.ale.act(0)
+
+    _, _, x_t = self._process_frame(0, False)
+    
+    self.reward = 0
+    self.terminal = False
+    self.s_t = np.stack((x_t, x_t, x_t, x_t), axis = 2)
     
   def process(self, action):
-    # 18種類のうちの実際に利用するactionに変換
+    # convert original 18 action index to minimal action set index
     real_action = self.real_actions[action]
-    self.reward = self.ale.act(real_action)
-    self.terminal = self.ale.game_over()
     
-    # screenのshapeは、(210, 160, 1)
-    self.ale.getScreenGrayscale(self.screen)
-    
-    # (210, 160)にreshape
-    reshaped_screen = np.reshape(self.screen, (210, 160))
-    
-    # height=210, width=160
-    
-    # height=110, width=84にリサイズ
-    resized_screen = cv2.resize(reshaped_screen, (84, 110))
-    x_t1 = resized_screen[18:102,:]
-    x_t1 = np.reshape(x_t1, (84, 84, 1))
-    x_t1 = x_t1.astype(np.float32)    
-    x_t1 *= (1.0/255.0)
-    
-    self.s_t1 = np.append(self.s_t[:,:,1:], x_t1, axis = 2)
-    if self.terminal:
-      self.ale.reset_game()
+    r, t, x_t1 = self._process_frame(real_action, True)
+
+    self.reward = r
+    self.terminal = t
+    self.s_t1 = np.append(self.s_t[:,:,1:], x_t1, axis = 2)    
 
   def update(self):
     self.s_t = self.s_t1

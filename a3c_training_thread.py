@@ -113,10 +113,12 @@ class A3CTrainingThread(object):
 
       self.episode_reward += reward
 
-      rewards.append(reward)
+      # clip reward
+      rewards.append( np.clip(reward, -1, 1) )
 
       self.local_t += 1
 
+      # s_t1 -> s_t
       self.game_state.update()
       
       if terminal:
@@ -127,6 +129,7 @@ class A3CTrainingThread(object):
                            self.episode_reward, global_t)
           
         self.episode_reward = 0
+        self.game_state.reset()
         break
 
     R = 0.0

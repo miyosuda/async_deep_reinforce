@@ -9,22 +9,22 @@ class GameACNetwork(object):
     with tf.device("/cpu:0"):
       self._action_size = action_size
       
-      self.W_conv1 = self._weight_variable([8, 8, 4, 16])  # stride=4
-      self.b_conv1 = self._bias_variable([16])
+      self.W_conv1 = self._conv_weight_variable([8, 8, 4, 16])  # stride=4
+      self.b_conv1 = self._conv_bias_variable([16], 8, 8, 4)
 
-      self.W_conv2 = self._weight_variable([4, 4, 16, 32]) # stride=2
-      self.b_conv2 = self._bias_variable([32])
+      self.W_conv2 = self._conv_weight_variable([4, 4, 16, 32]) # stride=2
+      self.b_conv2 = self._conv_bias_variable([32], 4, 4, 16)
 
-      self.W_fc1 = self._weight_variable([2592, 256])
-      self.b_fc1 = self._bias_variable([256])
+      self.W_fc1 = self._fc_weight_variable([2592, 256])
+      self.b_fc1 = self._fc_bias_variable([256], 2592)
 
       # weight for policy output layer
-      self.W_fc2 = self._weight_variable([256, action_size])
-      self.b_fc2 = self._bias_variable([action_size])
+      self.W_fc2 = self._fc_weight_variable([256, action_size])
+      self.b_fc2 = self._fc_bias_variable([action_size], 256)
 
       # weight for value output layer
-      self.W_fc3 = self._weight_variable([256, 1])
-      self.b_fc3 = self._bias_variable([1])
+      self.W_fc3 = self._fc_weight_variable([256, 1])
+      self.b_fc3 = self._fc_bias_variable([1], 256)
 
       # state (input)
       self.s = tf.placeholder("float", [1, 84, 84, 4])
@@ -92,12 +92,30 @@ class GameACNetwork(object):
 
         return tf.group(*sync_ops, name=name)
 
-  def _weight_variable(self, shape):
-    initial = tf.truncated_normal(shape, stddev = 0.01)
+  # weight initialization based on muupan's code
+  # https://github.com/muupan/async-rl/blob/master/a3c_ale.py
+  def _fc_weight_variable(self, shape):
+    input_channels = shape[0]
+    d = 1.0 / np.sqrt(input_channels)
+    initial = tf.random_uniform(shape, minval=-d, maxval=d)
     return tf.Variable(initial)
 
-  def _bias_variable(self, shape):
-    initial = tf.constant(0.0, shape = shape)
+  def _fc_bias_variable(self, shape, input_channels):
+    d = 1.0 / np.sqrt(input_channels)
+    initial = tf.random_uniform(shape, minval=-d, maxval=d)
+    return tf.Variable(initial)  
+
+  def _conv_weight_variable(self, shape):
+    w = shape[0]
+    h = shape[1]
+    input_channels = shape[2]
+    d = 1.0 / np.sqrt(input_channels * w * h)
+    initial = tf.random_uniform(shape, minval=-d, maxval=d)
+    return tf.Variable(initial)
+
+  def _conv_bias_variable(self, shape, w, h, input_channels):
+    d = 1.0 / np.sqrt(input_channels * w * h)
+    initial = tf.random_uniform(shape, minval=-d, maxval=d)
     return tf.Variable(initial)
 
   def _conv2d(self, x, W, stride):
