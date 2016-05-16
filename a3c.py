@@ -44,7 +44,7 @@ global_t = 0
 
 stop_requested = False
 
-global_network = GameACNetwork(ACTION_SIZE)
+global_network = GameACNetwork(ACTION_SIZE, device)
 
 training_threads = []
 
