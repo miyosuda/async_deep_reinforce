@@ -20,9 +20,8 @@ from constants import RMSP_ALPHA
 from constants import GRAD_NORM_CLIP
 from constants import USE_GPU
 
+# use CPU for weight visualize tool
 device = "/cpu:0"
-if USE_GPU:
-  device = "/gpu:0"
 
 global_network = GameACNetwork(ACTION_SIZE, device)
 

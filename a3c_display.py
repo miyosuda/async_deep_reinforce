@@ -31,9 +31,8 @@ def choose_action(pi_values):
   #fail safe
   return len(values)-1
 
+# use CPU for display tool
 device = "/cpu:0"
-if USE_GPU:
-  device = "/gpu:0"
 
 global_network = GameACNetwork(ACTION_SIZE, device)
 
