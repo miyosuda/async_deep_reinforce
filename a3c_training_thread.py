@@ -13,19 +13,23 @@ from constants import LOCAL_T_MAX
 from constants import ENTROPY_BETA
 
 class A3CTrainingThread(object):
-  def __init__(self, thread_index, global_network, initial_learning_rate,
+  def __init__(self,
+               thread_index,
+               global_network,
+               initial_learning_rate,
                learning_rate_input,
                grad_applier,
-               max_global_time_step):
+               max_global_time_step,
+               device):
 
     self.thread_index = thread_index
     self.learning_rate_input = learning_rate_input
     self.max_global_time_step = max_global_time_step
 
-    self.local_network = GameACNetwork(ACTION_SIZE)
+    self.local_network = GameACNetwork(ACTION_SIZE, device)
     self.local_network.prepare_loss(ENTROPY_BETA)
 
-    self.trainer = AccumTrainer()
+    self.trainer = AccumTrainer(device)
     self.trainer.prepare_minimize( self.local_network.total_loss,
                                    self.local_network.get_vars() )
     

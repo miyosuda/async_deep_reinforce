@@ -5,8 +5,12 @@ import numpy as np
 # Actor-Critic Network (Policy network and Value network)
 
 class GameACNetwork(object):
-  def __init__(self, action_size):
-    with tf.device("/cpu:0"):
+  def __init__(self,
+               action_size,
+               device="/cpu:0"):
+    self._device = device
+    
+    with tf.device(self._device):
       self._action_size = action_size
       
       self.W_conv1 = self._conv_weight_variable([8, 8, 4, 16])  # stride=4
@@ -41,7 +45,7 @@ class GameACNetwork(object):
       self.v = tf.matmul(h_fc1, self.W_fc3) + self.b_fc3
 
   def prepare_loss(self, entropy_beta):
-    with tf.device("/cpu:0"):
+    with tf.device(self._device):
       # taken action (input for policy)
       self.a = tf.placeholder("float", [1, self._action_size])
     
@@ -84,7 +88,7 @@ class GameACNetwork(object):
 
     sync_ops = []
 
-    with tf.device("/cpu:0"):
+    with tf.device(self._device):
       with tf.op_scope([], name, "GameACNetwork") as name:
         for(src_var, dst_var) in zip(src_vars, dst_vars):
           sync_op = tf.assign(dst_var, src_var)

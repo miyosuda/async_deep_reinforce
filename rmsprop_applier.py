@@ -12,6 +12,7 @@ class RMSPropApplier(object):
                momentum=0.0,
                epsilon=1e-10,
                clip_norm=40.0,
+               device="/cpu:0",
                name="RMSPropApplier"):
 
     self._name = name
@@ -20,6 +21,7 @@ class RMSPropApplier(object):
     self._momentum = momentum
     self._epsilon = epsilon
     self._clip_norm = clip_norm
+    self._device = device
 
     # Tensors for learning rate and momentum.  Created in _prepare.
     self._learning_rate_tensor = None
@@ -86,7 +88,7 @@ class RMSPropApplier(object):
   def apply_gradients(self, var_list, accum_grad_list, name=None):
     update_ops = []
 
-    with tf.device("/cpu:0"):
+    with tf.device(self._device):
       with tf.control_dependencies(None):
         self._create_slots(var_list)
 
