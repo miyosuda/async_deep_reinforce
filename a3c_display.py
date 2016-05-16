@@ -13,6 +13,8 @@ from constants import PARALLEL_SIZE
 from constants import CHECKPOINT_DIR
 from constants import RMSP_EPSILON
 from constants import RMSP_ALPHA
+from constants import GRAD_NORM_CLIP
+from constants import USE_GPU
 
 def choose_action(pi_values):
   values = []
@@ -29,21 +31,28 @@ def choose_action(pi_values):
   #fail safe
   return len(values)-1
 
-global_network = GameACNetwork(ACTION_SIZE)
+device = "/cpu:0"
+if USE_GPU:
+  device = "/gpu:0"
+
+global_network = GameACNetwork(ACTION_SIZE, device)
 
 learning_rate_input = tf.placeholder("float")
 
 grad_applier = RMSPropApplier(learning_rate = learning_rate_input,
                               decay = RMSP_ALPHA,
                               momentum = 0.0,
-                              epsilon = RMSP_EPSILON )
+                              epsilon = RMSP_EPSILON,
+                              clip_norm = GRAD_NORM_CLIP,
+                              device = device)
 
 training_threads = []
 for i in range(PARALLEL_SIZE):
   training_thread = A3CTrainingThread(i, global_network, 1.0,
                                       learning_rate_input,
                                       grad_applier,
-                                      8000000)
+                                      8000000,
+                                      device = device)
   training_threads.append(training_thread)
 
 sess = tf.Session()
