@@ -84,7 +84,12 @@ class RMSPropApplier(object):
       grad,
       use_locking=False).op
 
-  # 加算していったgradientを最後にvarに反映させる.
+  # Apply accumulated gradients to var.
+  #
+  # TODO: in RMSProp native code, memcpy() (for CPU) and
+  # cudaMemcpyAsync() (for GPU) are used when updating values,
+  # and values might tend to be overwritten with results from other threads.
+  # (Need to check the learning performance with replacing it)
   def apply_gradients(self, var_list, accum_grad_list, name=None):
     update_ops = []
 

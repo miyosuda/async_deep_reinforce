@@ -17,4 +17,4 @@ GAMMA = 0.99 # discount factor for rewards
 ENTROPY_BETA = 0.01 # entropy regurarlization constant
 MAX_TIME_STEP = 6 * 10**7
 GRAD_NORM_CLIP = 40.0 # gradient norm clipping
-USE_GPU = True
+USE_GPU = False # To use GPU, set True
