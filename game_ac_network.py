@@ -55,14 +55,14 @@ class GameACNetwork(object):
       entropy = -tf.reduce_sum(self.pi * tf.log(self.pi))
 
       # policy loss (output)  (add minus, because this is for gradient ascent)
-      # (Learning rate for Actor is half of Critic's, so multiply by 0.5)
-      policy_loss = -0.5 * ( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ) ) * self.td +
+      policy_loss = -( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ) ) * self.td +
                              entropy * entropy_beta )
 
       # R (input for value)
       self.r = tf.placeholder("float", [1])
       # value loss (output)
-      value_loss = tf.nn.l2_loss(self.r - self.v)
+      # (Learning rate for Critic is half of Actor's, so multiply by 0.5)
+      value_loss = 0.5 * tf.nn.l2_loss(self.r - self.v)
 
       # gradienet of policy and value are summed up
       self.total_loss = policy_loss + value_loss
