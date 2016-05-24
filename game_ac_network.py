@@ -5,26 +5,30 @@ import numpy as np
 # Actor-Critic Network (Policy network and Value network)
 
 class GameACNetwork(object):
-  def __init__(self, action_size):
-    with tf.device("/cpu:0"):
+  def __init__(self,
+               action_size,
+               device="/cpu:0"):
+    self._device = device
+    
+    with tf.device(self._device):
       self._action_size = action_size
       
-      self.W_conv1 = self._weight_variable([8, 8, 4, 16])  # stride=4
-      self.b_conv1 = self._bias_variable([16])
+      self.W_conv1 = self._conv_weight_variable([8, 8, 4, 16])  # stride=4
+      self.b_conv1 = self._conv_bias_variable([16], 8, 8, 4)
 
-      self.W_conv2 = self._weight_variable([4, 4, 16, 32]) # stride=2
-      self.b_conv2 = self._bias_variable([32])
+      self.W_conv2 = self._conv_weight_variable([4, 4, 16, 32]) # stride=2
+      self.b_conv2 = self._conv_bias_variable([32], 4, 4, 16)
 
-      self.W_fc1 = self._weight_variable([2592, 256])
-      self.b_fc1 = self._bias_variable([256])
+      self.W_fc1 = self._fc_weight_variable([2592, 256])
+      self.b_fc1 = self._fc_bias_variable([256], 2592)
 
       # weight for policy output layer
-      self.W_fc2 = self._weight_variable([256, action_size])
-      self.b_fc2 = self._bias_variable([action_size])
+      self.W_fc2 = self._fc_weight_variable([256, action_size])
+      self.b_fc2 = self._fc_bias_variable([action_size], 256)
 
       # weight for value output layer
-      self.W_fc3 = self._weight_variable([256, 1])
-      self.b_fc3 = self._bias_variable([1])
+      self.W_fc3 = self._fc_weight_variable([256, 1])
+      self.b_fc3 = self._fc_bias_variable([1], 256)
 
       # state (input)
       self.s = tf.placeholder("float", [None, 84, 84, 4])
@@ -41,21 +45,27 @@ class GameACNetwork(object):
       self.v = tf.matmul(h_fc1, self.W_fc3) + self.b_fc3
 
   def prepare_loss(self, entropy_beta):
-    with tf.device("/cpu:0"):
+    with tf.device(self._device):
       # taken action (input for policy)
       self.a = tf.placeholder("float", [None, self._action_size])
     
       # temporary difference (R-V) (input for policy)
       self.td = tf.placeholder("float", [None])
+      
+      # policy entropy
       entropy = -tf.reduce_sum(self.pi * tf.log(self.pi), reduction_indices=1)
       
       # policy loss (output)  (add minus, because this is for gradient ascent)
-      self.policy_loss = - tf.reduce_sum( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ), reduction_indices=1 ) * self.td + entropy * entropy_beta )
+      policy_loss = - tf.reduce_sum( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ), reduction_indices=1 ) * self.td + entropy * entropy_beta )
 
       # R (input for value)
       self.r = tf.placeholder("float", [None])
       # value loss (output)
-      self.value_loss = tf.nn.l2_loss(self.r - self.v)
+      # (Learning rate for Critic is half of Actor's, so multiply by 0.5)
+      value_loss = 0.5 * tf.nn.l2_loss(self.r - self.v)
+
+      # gradienet of policy and value are summed up
+      self.total_loss = policy_loss + value_loss
 
   def run_policy(self, sess, s_t):
     pi_out = sess.run( self.pi, feed_dict = {self.s : [s_t]} )
@@ -65,56 +75,62 @@ class GameACNetwork(object):
     v_out = sess.run( self.v, feed_dict = {self.s : [s_t]} )
     return v_out[0][0] # output is scalar
 
-  def get_policy_vars(self):
+  def get_vars(self):
     return [self.W_conv1, self.b_conv1,
-        self.W_conv2, self.b_conv2,
-        self.W_fc1, self.b_fc1,
-        self.W_fc2, self.b_fc2]
-
-  def get_value_vars(self):
-    return [self.W_conv1, self.b_conv1,
-        self.W_conv2, self.b_conv2,
-        self.W_fc1, self.b_fc1,
-        self.W_fc3, self.b_fc3]
+            self.W_conv2, self.b_conv2,
+            self.W_fc1, self.b_fc1,
+            self.W_fc2, self.b_fc2,
+            self.W_fc3, self.b_fc3]
 
   def sync_from(self, src_netowrk, name=None):
-    src_policy_vars = src_netowrk.get_policy_vars()
-    src_value_vars = src_netowrk.get_value_vars()
-      
-    dst_policy_vars = self.get_policy_vars()
-    dst_value_vars = self.get_value_vars()
+    src_vars = src_netowrk.get_vars()
+    dst_vars = self.get_vars()
 
     sync_ops = []
 
-    with tf.device("/cpu:0"):    
+    with tf.device(self._device):
       with tf.op_scope([], name, "GameACNetwork") as name:
-        for(src_policy_var, dst_policy_var) in zip(src_policy_vars, dst_policy_vars):
-          sync_op = tf.assign(dst_policy_var, src_policy_var)
+        for(src_var, dst_var) in zip(src_vars, dst_vars):
+          sync_op = tf.assign(dst_var, src_var)
           sync_ops.append(sync_op)
 
-        for(src_value_var, dst_value_var) in zip(src_value_vars, dst_value_vars):
-          sync_op = tf.assign(dst_value_var, src_value_var)
-          sync_ops.append(sync_op)
-      
         return tf.group(*sync_ops, name=name)
 
-  def _weight_variable(self, shape):
-    initial = tf.truncated_normal(shape, stddev = 0.01)
+  # weight initialization based on muupan's code
+  # https://github.com/muupan/async-rl/blob/master/a3c_ale.py
+  def _fc_weight_variable(self, shape):
+    input_channels = shape[0]
+    d = 1.0 / np.sqrt(input_channels)
+    initial = tf.random_uniform(shape, minval=-d, maxval=d)
     return tf.Variable(initial)
 
-  def _bias_variable(self, shape):
-    initial = tf.constant(0.0, shape = shape)
+  def _fc_bias_variable(self, shape, input_channels):
+    d = 1.0 / np.sqrt(input_channels)
+    initial = tf.random_uniform(shape, minval=-d, maxval=d)
+    return tf.Variable(initial)  
+
+  def _conv_weight_variable(self, shape):
+    w = shape[0]
+    h = shape[1]
+    input_channels = shape[2]
+    d = 1.0 / np.sqrt(input_channels * w * h)
+    initial = tf.random_uniform(shape, minval=-d, maxval=d)
+    return tf.Variable(initial)
+
+  def _conv_bias_variable(self, shape, w, h, input_channels):
+    d = 1.0 / np.sqrt(input_channels * w * h)
+    initial = tf.random_uniform(shape, minval=-d, maxval=d)
     return tf.Variable(initial)
 
   def _conv2d(self, x, W, stride):
     return tf.nn.conv2d(x, W, strides = [1, stride, stride, 1], padding = "VALID")
 
-  def _save_sub(self, sess, prefix, var, name):
+  def _debug_save_sub(self, sess, prefix, var, name):
     var_val = var.eval(sess)
     var_val = np.reshape(var_val, (1, np.product(var_val.shape)))        
     np.savetxt('./' + prefix + '_' + name + '.csv', var_val, delimiter=',')
 
-  def save(self, sess, prefix):
+  def debug_save(self, sess, prefix):
     self._save_sub(sess, prefix, self.W_conv1, "W_conv1")
     self._save_sub(sess, prefix, self.b_conv1, "b_conv1")
     self._save_sub(sess, prefix, self.W_conv2, "W_conv2")

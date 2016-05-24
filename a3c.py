@@ -22,6 +22,8 @@ from constants import CHECKPOINT_DIR
 from constants import LOG_FILE
 from constants import RMSP_EPSILON
 from constants import RMSP_ALPHA
+from constants import GRAD_NORM_CLIP
+from constants import USE_GPU
 
 
 def log_uniform(lo, hi, rate):
@@ -29,6 +31,10 @@ def log_uniform(lo, hi, rate):
   log_hi = math.log(hi)
   v = log_lo * (1-rate) + log_hi * rate
   return math.exp(v)
+
+device = "/cpu:0"
+if USE_GPU:
+  device = "/gpu:0"
 
 initial_learning_rate = log_uniform(INITIAL_ALPHA_LOW,
                                     INITIAL_ALPHA_HIGH,
@@ -38,26 +44,24 @@ global_t = 0
 
 stop_requested = False
 
-global_network = GameACNetwork(ACTION_SIZE)
+global_network = GameACNetwork(ACTION_SIZE, device)
 
 training_threads = []
 
 learning_rate_input = tf.placeholder("float")
 
-policy_applier = RMSPropApplier(learning_rate = learning_rate_input,
-                                decay = RMSP_ALPHA,
-                                momentum = 0.0,
-                                epsilon = RMSP_EPSILON )
-
-value_applier = RMSPropApplier(learning_rate = learning_rate_input,
-                               decay = RMSP_ALPHA,
-                               momentum = 0.0,
-                               epsilon = RMSP_EPSILON )
+grad_applier = RMSPropApplier(learning_rate = learning_rate_input,
+                              decay = RMSP_ALPHA,
+                              momentum = 0.0,
+                              epsilon = RMSP_EPSILON,
+                              clip_norm = GRAD_NORM_CLIP,
+                              device = device)
 
 for i in range(PARALLEL_SIZE):
   training_thread = A3CTrainingThread(i, global_network, initial_learning_rate,
                                       learning_rate_input,
-                                      policy_applier, value_applier, MAX_TIME_STEP)
+                                      grad_applier, MAX_TIME_STEP,
+                                      device = device)
   training_threads.append(training_thread)
 
 # prepare session
@@ -67,6 +71,9 @@ init = tf.initialize_all_variables()
 sess.run(init)
 
 # summary for tensorboard
+score_input = tf.placeholder(tf.int32)
+tf.scalar_summary("score", score_input)
+
 summary_op = tf.merge_all_summaries()
 summary_writer = tf.train.SummaryWriter(LOG_FILE, sess.graph_def)
 
@@ -95,7 +102,8 @@ def train_function(parallel_index):
     if global_t > MAX_TIME_STEP:
       break
 
-    diff_global_t = training_thread.process(sess, global_t, summary_writer, summary_op)
+    diff_global_t = training_thread.process(sess, global_t, summary_writer,
+                                            summary_op, score_input)
     global_t += diff_global_t
     
     

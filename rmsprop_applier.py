@@ -11,6 +11,8 @@ class RMSPropApplier(object):
                decay=0.9,
                momentum=0.0,
                epsilon=1e-10,
+               clip_norm=40.0,
+               device="/cpu:0",
                name="RMSPropApplier"):
 
     self._name = name
@@ -18,6 +20,8 @@ class RMSPropApplier(object):
     self._decay = decay
     self._momentum = momentum
     self._epsilon = epsilon
+    self._clip_norm = clip_norm
+    self._device = device
 
     # Tensors for learning rate and momentum.  Created in _prepare.
     self._learning_rate_tensor = None
@@ -80,11 +84,16 @@ class RMSPropApplier(object):
       grad,
       use_locking=False).op
 
-  # 加算していったgradientを最後にvarに反映させる.
+  # Apply accumulated gradients to var.
+  #
+  # TODO: in RMSProp native code, memcpy() (for CPU) and
+  # cudaMemcpyAsync() (for GPU) are used when updating values,
+  # and values might tend to be overwritten with results from other threads.
+  # (Need to check the learning performance with replacing it)
   def apply_gradients(self, var_list, accum_grad_list, name=None):
     update_ops = []
 
-    with tf.device("/cpu:0"):
+    with tf.device(self._device):
       with tf.control_dependencies(None):
         self._create_slots(var_list)
 
@@ -92,5 +101,6 @@ class RMSPropApplier(object):
         self._prepare()
         for var, accum_grad in zip(var_list, accum_grad_list):
           with tf.name_scope("update_" + var.op.name), tf.device(var.device):
-            update_ops.append(self._apply_dense(accum_grad, var))
+            clipped_accum_grad = tf.clip_by_norm(accum_grad, self._clip_norm)
+            update_ops.append(self._apply_dense(clipped_accum_grad, var))
         return tf.group(*update_ops, name=name)

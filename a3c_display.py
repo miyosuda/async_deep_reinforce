@@ -12,6 +12,9 @@ from constants import ACTION_SIZE
 from constants import PARALLEL_SIZE
 from constants import CHECKPOINT_DIR
 from constants import RMSP_EPSILON
+from constants import RMSP_ALPHA
+from constants import GRAD_NORM_CLIP
+from constants import USE_GPU
 
 def choose_action(pi_values):
   values = []
@@ -28,26 +31,27 @@ def choose_action(pi_values):
   #fail safe
   return len(values)-1
 
-global_network = GameACNetwork(ACTION_SIZE)
+# use CPU for display tool
+device = "/cpu:0"
+
+global_network = GameACNetwork(ACTION_SIZE, device)
 
 learning_rate_input = tf.placeholder("float")
 
-policy_applier = RMSPropApplier(learning_rate = learning_rate_input,
-                                decay = 0.99,
-                                momentum = 0.0,
-                                epsilon = RMSP_EPSILON )
-
-value_applier = RMSPropApplier(learning_rate = learning_rate_input,
-                               decay = 0.99,
-                               momentum = 0.0,
-                               epsilon = RMSP_EPSILON )
+grad_applier = RMSPropApplier(learning_rate = learning_rate_input,
+                              decay = RMSP_ALPHA,
+                              momentum = 0.0,
+                              epsilon = RMSP_EPSILON,
+                              clip_norm = GRAD_NORM_CLIP,
+                              device = device)
 
 training_threads = []
 for i in range(PARALLEL_SIZE):
   training_thread = A3CTrainingThread(i, global_network, 1.0,
                                       learning_rate_input,
-                                      policy_applier, value_applier,
-                                      8000000)
+                                      grad_applier,
+                                      8000000,
+                                      device = device)
   training_threads.append(training_thread)
 
 sess = tf.Session()
@@ -62,7 +66,7 @@ if checkpoint and checkpoint.model_checkpoint_path:
 else:
   print "Could not find old checkpoint"
 
-game_state = GameState(0, display=True)
+game_state = GameState(0, display=True, no_op_max=0)
 
 while True:
   pi_values = global_network.run_policy(sess, game_state.s_t)

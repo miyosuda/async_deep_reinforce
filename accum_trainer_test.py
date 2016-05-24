@@ -43,6 +43,7 @@ class AccumTrainerTest(tf.test.TestCase):
       # accum_gradがゼロになっているのを確認
       self.assertAllClose([0.0, 0.0], accum_grad0.eval())
 
+<<<<<<< HEAD
   def testBatchAccum(self):
     with self.test_session():
       x = tf.placeholder("float", shape=(None,1))
@@ -81,7 +82,8 @@ class AccumTrainerTest(tf.test.TestCase):
       t = 2 * 1*1 * 1 + 2 * 2*2 * 1
       
       self.assertAllClose([t], accum_grad0.eval())
-      
+
+  # TODO: gradient clipping test
 
 if __name__ == "__main__":
   tf.test.main()

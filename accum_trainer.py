@@ -3,8 +3,11 @@
 import tensorflow as tf
 
 class AccumTrainer(object):
-  def __init__(self, name="AccumTrainer"):
+  def __init__(self,
+               device="/cpu:0",
+               name="AccumTrainer"):
     self._name = name
+    self._device = device
 
   def _create_accum_grad(self, var):
     """
@@ -15,8 +18,8 @@ class AccumTrainer(object):
     accum_grad = tf.Variable(zero, name=name, trainable=False)
     return accum_grad
 
-  def prepare_minimize(self, loss, var_list, clip_norm):
-    with tf.device("/cpu:0"):
+  def prepare_minimize(self, loss, var_list):
+    with tf.device(self._device):
       var_refs = [v.ref() for v in var_list]
       grads = tf.gradients(
         loss, var_refs,
@@ -24,13 +27,8 @@ class AccumTrainer(object):
         aggregation_method=None,
         colocate_gradients_with_ops=False)
 
-      clipped_grads = []
-      for grad in grads:
-        clipped_grad = tf.clip_by_norm(grad, clip_norm)
-        clipped_grads.append(clipped_grad)
-
       self._var_list = var_list
-      self._grad_list = clipped_grads
+      self._grad_list = grads
       self._accum_grad_list = []
     
       with tf.control_dependencies(None):
@@ -42,7 +40,7 @@ class AccumTrainer(object):
     return self._accum_grad_list
 
   def accumulate_gradients(self, name=None):
-    with tf.device("/cpu:0"):
+    with tf.device(self._device):
       accumulate_ops = []
     
       with tf.op_scope([], name, self._name) as name:
@@ -52,7 +50,7 @@ class AccumTrainer(object):
         return tf.group(*accumulate_ops, name=name)
 
   def reset_gradients(self,  name=None):
-    with tf.device("/cpu:0"):
+    with tf.device(self._device):
       reset_ops = []
 
       with tf.op_scope([], name, self._name) as name:
