@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 import numpy as np
+from custom_lstm import CustomBasicLSTMCell
 
-# Actor-Critic Network (Policy network and Value network)
+# Actor-Critic LSTM Network (Policy network and Value network)
 
-class GameACNetwork(object):
+class GameACLSTMNetwork(object):
   def __init__(self,
                action_size,
-               device="/cpu:0"):
+               thread_index, # -1 for global
+               device="/cpu:0" ):
+
     self._device = device
     
     with tf.device(self._device):
@@ -21,6 +24,9 @@ class GameACNetwork(object):
 
       self.W_fc1 = self._fc_weight_variable([2592, 256])
       self.b_fc1 = self._fc_bias_variable([256], 2592)
+
+      # lstm
+      self.lstm = CustomBasicLSTMCell(256)
 
       # weight for policy output layer
       self.W_fc2 = self._fc_weight_variable([256, action_size])
@@ -39,10 +45,17 @@ class GameACNetwork(object):
       h_conv2_flat = tf.reshape(h_conv2, [1, 2592])
       h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, self.W_fc1) + self.b_fc1)
 
+      # TODO: now num_steps for LSTM is only one
+      self.initial_lstm_state = tf.zeros([1, self.lstm.state_size])
+      scope = "net_" + str(thread_index)
+      lstm_output, self.lstm_state = self.lstm(h_fc1, self.initial_lstm_state, scope)
+
       # policy (output)
-      self.pi = tf.nn.softmax(tf.matmul(h_fc1, self.W_fc2) + self.b_fc2)
+      self.pi = tf.nn.softmax(tf.matmul(lstm_output, self.W_fc2) + self.b_fc2)
       # value (output)
-      self.v = tf.matmul(h_fc1, self.W_fc3) + self.b_fc3
+      self.v = tf.matmul(lstm_output, self.W_fc3) + self.b_fc3
+
+      self.reset_state()
 
   def prepare_loss(self, entropy_beta):
     with tf.device(self._device):
@@ -67,22 +80,38 @@ class GameACNetwork(object):
       # gradienet of policy and value are summed up
       self.total_loss = policy_loss + value_loss
 
-  def run_policy(self, sess, s_t):
-    pi_out = sess.run( self.pi, feed_dict = {self.s : [s_t]} )
-    return pi_out[0]
+  def reset_state(self):
+    self.lstm_state_out = np.zeros([1, self.lstm.state_size])
 
+  def run_policy(self, sess, s_t):
+    pi_out, self.lstm_state_out = sess.run( [self.pi, self.lstm_state],
+                                            feed_dict = {self.s : [s_t],
+                                                         self.initial_lstm_state :
+                                                         self.lstm_state_out } )
+    return pi_out[0]
+  
   def run_value(self, sess, s_t):
-    v_out = sess.run( self.v, feed_dict = {self.s : [s_t]} )
+    prev_lstm_state_out = self.lstm_state_out
+    v_out, _ = sess.run( [self.v, self.lstm_state],
+                         feed_dict = {self.s : [s_t],
+                                      self.initial_lstm_state :
+                                      self.lstm_state_out } )
+    # roll back lstm state
+    self.lstm_state_out = prev_lstm_state_out
     return v_out[0][0] # output is scalar
 
   def run_policy_and_value(self, sess, s_t):
-    pi_out, v_out = sess.run( [self.pi, self.v], feed_dict = {self.s : [s_t]} )
+    pi_out, v_out, self.lstm_state_out = sess.run( [self.pi, self.v, self.lstm_state],
+                                                   feed_dict = {self.s : [s_t],
+                                                                self.initial_lstm_state :
+                                                                self.lstm_state_out } )
     return (pi_out[0], v_out[0][0])
 
   def get_vars(self):
     return [self.W_conv1, self.b_conv1,
             self.W_conv2, self.b_conv2,
             self.W_fc1, self.b_fc1,
+            self.lstm.matrix, self.lstm.bias,
             self.W_fc2, self.b_fc2,
             self.W_fc3, self.b_fc3]
 

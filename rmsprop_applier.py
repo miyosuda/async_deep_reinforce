@@ -72,6 +72,10 @@ class RMSPropApplier(object):
       named_slots[var] = slot_creator.create_zeros_slot(var, op_name)
     return named_slots[var]
 
+  # TODO: in RMSProp native code, memcpy() (for CPU) and
+  # cudaMemcpyAsync() (for GPU) are used when updating values,
+  # and values might tend to be overwritten with results from other threads.
+  # (Need to check the learning performance with replacing it)  
   def _apply_dense(self, grad, var):
     rms = self.get_slot(var, "rms")
     mom = self.get_slot(var, "momentum")
@@ -85,11 +89,6 @@ class RMSPropApplier(object):
       use_locking=False).op
 
   # Apply accumulated gradients to var.
-  #
-  # TODO: in RMSProp native code, memcpy() (for CPU) and
-  # cudaMemcpyAsync() (for GPU) are used when updating values,
-  # and values might tend to be overwritten with results from other threads.
-  # (Need to check the learning performance with replacing it)
   def apply_gradients(self, var_list, accum_grad_list, name=None):
     update_ops = []
 

@@ -8,7 +8,8 @@ import random
 import math
 import os
 
-from game_ac_network import GameACNetwork
+#from game_ac_network import GameACNetwork
+from game_ac_lstm_network import GameACLSTMNetwork
 from a3c_training_thread import A3CTrainingThread
 from rmsprop_applier import RMSPropApplier
 
@@ -44,7 +45,8 @@ global_t = 0
 
 stop_requested = False
 
-global_network = GameACNetwork(ACTION_SIZE, device)
+#global_network = GameACNetwork(ACTION_SIZE, device)
+global_network = GameACLSTMNetwork(ACTION_SIZE, -1, device)
 
 training_threads = []
 
