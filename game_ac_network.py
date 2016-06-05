@@ -60,12 +60,17 @@ class GameACNetwork(object):
 
       # R (input for value)
       self.r = tf.placeholder("float", [None])
+      
       # value loss (output)
       # (Learning rate for Critic is half of Actor's, so multiply by 0.5)
       value_loss = 0.5 * tf.nn.l2_loss(self.r - self.v)
 
       # gradienet of policy and value are summed up
       self.total_loss = policy_loss + value_loss
+
+  def run_policy_and_value(self, sess, s_t):
+    pi_out, v_out = sess.run( [self.pi, self.v], feed_dict = {self.s : [s_t]} )
+    return (pi_out[0], v_out[0][0])
 
   def run_policy(self, sess, s_t):
     pi_out = sess.run( self.pi, feed_dict = {self.s : [s_t]} )
@@ -124,20 +129,3 @@ class GameACNetwork(object):
 
   def _conv2d(self, x, W, stride):
     return tf.nn.conv2d(x, W, strides = [1, stride, stride, 1], padding = "VALID")
-
-  def _debug_save_sub(self, sess, prefix, var, name):
-    var_val = var.eval(sess)
-    var_val = np.reshape(var_val, (1, np.product(var_val.shape)))        
-    np.savetxt('./' + prefix + '_' + name + '.csv', var_val, delimiter=',')
-
-  def debug_save(self, sess, prefix):
-    self._save_sub(sess, prefix, self.W_conv1, "W_conv1")
-    self._save_sub(sess, prefix, self.b_conv1, "b_conv1")
-    self._save_sub(sess, prefix, self.W_conv2, "W_conv2")
-    self._save_sub(sess, prefix, self.b_conv2, "b_conv2")
-    self._save_sub(sess, prefix, self.W_fc1, "W_fc1")
-    self._save_sub(sess, prefix, self.b_fc1, "b_fc1")
-    self._save_sub(sess, prefix, self.W_fc2, "W_fc2")
-    self._save_sub(sess, prefix, self.b_fc2, "b_fc2")
-    self._save_sub(sess, prefix, self.W_fc3, "W_fc3")
-    self._save_sub(sess, prefix, self.b_fc3, "b_fc3")

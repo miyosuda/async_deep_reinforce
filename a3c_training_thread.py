@@ -29,6 +29,7 @@ class A3CTrainingThread(object):
     self.local_network = GameACNetwork(ACTION_SIZE, device)
     self.local_network.prepare_loss(ENTROPY_BETA)
 
+    # TODO: don't need accum trainer anymore with batch
     self.trainer = AccumTrainer(device)
     self.trainer.prepare_minimize( self.local_network.total_loss,
                                    self.local_network.get_vars() )
@@ -96,12 +97,11 @@ class A3CTrainingThread(object):
     
     # t_max times loop
     for i in range(LOCAL_T_MAX):
-      pi_ = self.local_network.run_policy(sess, self.game_state.s_t)
+      pi_, value_ = self.local_network.run_policy_and_value(sess, self.game_state.s_t)
       action = self.choose_action(pi_)
 
       states.append(self.game_state.s_t)
       actions.append(action)
-      value_ = self.local_network.run_value(sess, self.game_state.s_t)
       values.append(value_)
 
       if (self.thread_index == 0) and (self.local_t % 100) == 0:
@@ -145,7 +145,7 @@ class A3CTrainingThread(object):
     rewards.reverse()
     values.reverse()
 
-    batch_si = []    
+    batch_si = []
     batch_a = []
     batch_td = []
     batch_R = []
@@ -162,12 +162,12 @@ class A3CTrainingThread(object):
       batch_td.append(td)
       batch_R.append(R)
 
-      sess.run( self.accum_gradients,
-                feed_dict = {
-                  self.local_network.s: batch_si,
-                  self.local_network.a: batch_a,
-                  self.local_network.td: batch_td,
-                  self.local_network.r: batch_R } )
+    sess.run( self.accum_gradients,
+              feed_dict = {
+                self.local_network.s: batch_si,
+                self.local_network.a: batch_a,
+                self.local_network.td: batch_td,
+                self.local_network.r: batch_R } )
       
     cur_learning_rate = self._anneal_learning_rate(global_t)
 
@@ -177,7 +177,7 @@ class A3CTrainingThread(object):
     if (self.thread_index == 0) and (self.local_t % 100) == 0:
       print "TIMESTEP", self.local_t
 
-    # 進んだlocal step数を返す
+    # return advanced local step size
     diff_local_t = self.local_t - start_local_t
     return diff_local_t
     
