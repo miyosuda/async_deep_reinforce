@@ -48,7 +48,7 @@ To enable gpu, change "USE_GPU" flag in "constants.py".
 ## Result
 Score plot of local threads of pong in 24h was like this. (with GTX980Ti)
 
-[![scores of local threads](https://github.com/miyosuda/async_deep_reinforce/blob/master/docs/graph_24h.png)]
+![scores of local threads](https://github.com/miyosuda/async_deep_reinforce/blob/master/docs/graph_24h.png)
 
 Scores are not averaged using global network like paper.
 
