@@ -67,6 +67,10 @@ class GameACNetwork(object):
       # gradienet of policy and value are summed up
       self.total_loss = policy_loss + value_loss
 
+  def run_policy_and_value(self, sess, s_t):
+    pi_out, v_out = sess.run( [self.pi, self.v], feed_dict = {self.s : [s_t]} )
+    return (pi_out[0], v_out[0][0])
+
   def run_policy(self, sess, s_t):
     pi_out = sess.run( self.pi, feed_dict = {self.s : [s_t]} )
     return pi_out[0]
