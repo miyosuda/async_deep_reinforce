@@ -42,7 +42,8 @@ class GameACNetwork(object):
       # policy (output)
       self.pi = tf.nn.softmax(tf.matmul(h_fc1, self.W_fc2) + self.b_fc2)
       # value (output)
-      self.v = tf.matmul(h_fc1, self.W_fc3) + self.b_fc3
+      v_ = tf.matmul(h_fc1, self.W_fc3) + self.b_fc3
+      self.v = tf.reshape( v_, [-1] )
 
   def prepare_loss(self, entropy_beta):
     with tf.device(self._device):
@@ -70,7 +71,7 @@ class GameACNetwork(object):
 
   def run_policy_and_value(self, sess, s_t):
     pi_out, v_out = sess.run( [self.pi, self.v], feed_dict = {self.s : [s_t]} )
-    return (pi_out[0], v_out[0][0])
+    return (pi_out[0], v_out[0])
 
   def run_policy(self, sess, s_t):
     pi_out = sess.run( self.pi, feed_dict = {self.s : [s_t]} )
@@ -78,7 +79,7 @@ class GameACNetwork(object):
 
   def run_value(self, sess, s_t):
     v_out = sess.run( self.v, feed_dict = {self.s : [s_t]} )
-    return v_out[0][0] # output is scalar
+    return v_out[0]
 
   def get_vars(self):
     return [self.W_conv1, self.b_conv1,
