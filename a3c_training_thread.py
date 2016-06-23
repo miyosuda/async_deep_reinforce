@@ -12,6 +12,7 @@ from constants import GAMMA
 from constants import LOCAL_T_MAX
 from constants import ENTROPY_BETA
 
+
 class A3CTrainingThread(object):
   def __init__(self,
                thread_index,
@@ -97,7 +98,7 @@ class A3CTrainingThread(object):
     
     # t_max times loop
     for i in range(LOCAL_T_MAX):
-      pi_, value_ = self.local_network.run_policy_and_value(sess, self.game_state.s_t)
+      pi_, value_ = self.local_network.run_policy_and_value(sess, self.game_state.s_t)      
       action = self.choose_action(pi_)
 
       states.append(self.game_state.s_t)

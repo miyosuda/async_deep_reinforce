@@ -42,6 +42,24 @@ To display the result with game play,
 
     $python a3c_disp.py
 
+## Using GPU
+To enable gpu, change "USE_GPU" flag in "constants.py".
+
+When running with 8 parallel game environemts, speeds of GPU (GTX980Ti) and CPU(Core i7 6700) were like this.
+
+|type | speed             |
+|-----|-------------------|
+| GPU | 396 steps per sec |
+| CPU | 321 steps per sec |
+
+
+## Result
+Score plot of local threads of pong in 24h (34.3 million global steps) was like this. (with GTX980Ti)
+
+![scores of local threads](https://github.com/miyosuda/async_deep_reinforce/blob/master/docs/graph_24h.png)
+
+Scores are not averaged using global network like paper.
+
 ## References
 
 This project uses setting written in muupan's wiki [muuupan/async-rl] (https://github.com/muupan/async-rl/wiki)
