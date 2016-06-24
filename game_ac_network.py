@@ -31,35 +31,37 @@ class GameACNetwork(object):
       self.b_fc3 = self._fc_bias_variable([1], 256)
 
       # state (input)
-      self.s = tf.placeholder("float", [1, 84, 84, 4])
+      self.s = tf.placeholder("float", [None, 84, 84, 4])
     
       h_conv1 = tf.nn.relu(self._conv2d(self.s, self.W_conv1, 4) + self.b_conv1)
       h_conv2 = tf.nn.relu(self._conv2d(h_conv1, self.W_conv2, 2) + self.b_conv2)
 
-      h_conv2_flat = tf.reshape(h_conv2, [1, 2592])
+      h_conv2_flat = tf.reshape(h_conv2, [-1, 2592])
       h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, self.W_fc1) + self.b_fc1)
 
       # policy (output)
       self.pi = tf.nn.softmax(tf.matmul(h_fc1, self.W_fc2) + self.b_fc2)
       # value (output)
-      self.v = tf.matmul(h_fc1, self.W_fc3) + self.b_fc3
+      v_ = tf.matmul(h_fc1, self.W_fc3) + self.b_fc3
+      self.v = tf.reshape( v_, [-1] )
 
   def prepare_loss(self, entropy_beta):
     with tf.device(self._device):
       # taken action (input for policy)
-      self.a = tf.placeholder("float", [1, self._action_size])
+      self.a = tf.placeholder("float", [None, self._action_size])
     
       # temporary difference (R-V) (input for policy)
-      self.td = tf.placeholder("float", [1])
+      self.td = tf.placeholder("float", [None])
+      
       # policy entropy
-      entropy = -tf.reduce_sum(self.pi * tf.log(self.pi))
-
+      entropy = -tf.reduce_sum(self.pi * tf.log(self.pi), reduction_indices=1)
+      
       # policy loss (output)  (add minus, because this is for gradient ascent)
-      policy_loss = -( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ) ) * self.td +
-                             entropy * entropy_beta )
+      policy_loss = - tf.reduce_sum( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ), reduction_indices=1 ) * self.td + entropy * entropy_beta )
 
       # R (input for value)
-      self.r = tf.placeholder("float", [1])
+      self.r = tf.placeholder("float", [None])
+      
       # value loss (output)
       # (Learning rate for Critic is half of Actor's, so multiply by 0.5)
       value_loss = 0.5 * tf.nn.l2_loss(self.r - self.v)
@@ -67,13 +69,17 @@ class GameACNetwork(object):
       # gradienet of policy and value are summed up
       self.total_loss = policy_loss + value_loss
 
+  def run_policy_and_value(self, sess, s_t):
+    pi_out, v_out = sess.run( [self.pi, self.v], feed_dict = {self.s : [s_t]} )
+    return (pi_out[0], v_out[0])
+
   def run_policy(self, sess, s_t):
     pi_out = sess.run( self.pi, feed_dict = {self.s : [s_t]} )
     return pi_out[0]
 
   def run_value(self, sess, s_t):
     v_out = sess.run( self.v, feed_dict = {self.s : [s_t]} )
-    return v_out[0][0] # output is scalar
+    return v_out[0]
 
   def run_policy_and_value(self, sess, s_t):
     pi_out, v_out = sess.run( [self.pi, self.v], feed_dict = {self.s : [s_t]} )
