@@ -37,15 +37,15 @@ class GameACLSTMNetwork(object):
       self.b_fc3 = self._fc_bias_variable([1], 256)
 
       # state (input)
-      self.s = tf.placeholder("float", [1, 84, 84, 4])
+      self.s = tf.placeholder("float", [None, 84, 84, 4])
     
       h_conv1 = tf.nn.relu(self._conv2d(self.s, self.W_conv1, 4) + self.b_conv1)
       h_conv2 = tf.nn.relu(self._conv2d(h_conv1, self.W_conv2, 2) + self.b_conv2)
 
-      h_conv2_flat = tf.reshape(h_conv2, [1, 2592])
+      h_conv2_flat = tf.reshape(h_conv2, [-1, 2592])
       h_fc1 = tf.nn.relu(tf.matmul(h_conv2_flat, self.W_fc1) + self.b_fc1)
 
-      # TODO: now num_steps for LSTM is only one
+      # TODO:
       self.initial_lstm_state = tf.zeros([1, self.lstm.state_size])
       scope = "net_" + str(thread_index)
       lstm_output, self.lstm_state = self.lstm(h_fc1, self.initial_lstm_state, scope)
@@ -53,17 +53,18 @@ class GameACLSTMNetwork(object):
       # policy (output)
       self.pi = tf.nn.softmax(tf.matmul(lstm_output, self.W_fc2) + self.b_fc2)
       # value (output)
-      self.v = tf.matmul(lstm_output, self.W_fc3) + self.b_fc3
+      v_ = tf.matmul(lstm_output, self.W_fc3) + self.b_fc3
+      self.v = tf.reshape( v_, [-1] )
 
       self.reset_state()
 
   def prepare_loss(self, entropy_beta):
     with tf.device(self._device):
       # taken action (input for policy)
-      self.a = tf.placeholder("float", [1, self._action_size])
+      self.a = tf.placeholder("float", [None, self._action_size])
     
       # temporary difference (R-V) (input for policy)
-      self.td = tf.placeholder("float", [1])
+      self.td = tf.placeholder("float", [None])
       # policy entropy
       entropy = -tf.reduce_sum(self.pi * tf.log(self.pi))
 
@@ -72,7 +73,7 @@ class GameACLSTMNetwork(object):
                              entropy * entropy_beta )
 
       # R (input for value)
-      self.r = tf.placeholder("float", [1])
+      self.r = tf.placeholder("float", [None])
       # value loss (output)
       # (Learning rate for Critic is half of Actor's, so multiply by 0.5)
       value_loss = 0.5 * tf.nn.l2_loss(self.r - self.v)
@@ -82,6 +83,13 @@ class GameACLSTMNetwork(object):
 
   def reset_state(self):
     self.lstm_state_out = np.zeros([1, self.lstm.state_size])
+
+  def run_policy_and_value(self, sess, s_t):
+    pi_out, v_out, self.lstm_state_out = sess.run( [self.pi, self.v, self.lstm_state],
+                                                   feed_dict = {self.s : [s_t],
+                                                                self.initial_lstm_state :
+                                                                self.lstm_state_out } )
+    return (pi_out[0], v_out[0])
 
   def run_policy(self, sess, s_t):
     pi_out, self.lstm_state_out = sess.run( [self.pi, self.lstm_state],
@@ -98,14 +106,7 @@ class GameACLSTMNetwork(object):
                                       self.lstm_state_out } )
     # roll back lstm state
     self.lstm_state_out = prev_lstm_state_out
-    return v_out[0][0] # output is scalar
-
-  def run_policy_and_value(self, sess, s_t):
-    pi_out, v_out, self.lstm_state_out = sess.run( [self.pi, self.v, self.lstm_state],
-                                                   feed_dict = {self.s : [s_t],
-                                                                self.initial_lstm_state :
-                                                                self.lstm_state_out } )
-    return (pi_out[0], v_out[0][0])
+    return v_out[0]
 
   def get_vars(self):
     return [self.W_conv1, self.b_conv1,
