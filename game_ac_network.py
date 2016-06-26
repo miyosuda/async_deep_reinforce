@@ -81,10 +81,6 @@ class GameACNetwork(object):
     v_out = sess.run( self.v, feed_dict = {self.s : [s_t]} )
     return v_out[0]
 
-  def run_policy_and_value(self, sess, s_t):
-    pi_out, v_out = sess.run( [self.pi, self.v], feed_dict = {self.s : [s_t]} )
-    return (pi_out[0], v_out[0][0])
-
   def get_vars(self):
     return [self.W_conv1, self.b_conv1,
             self.W_conv2, self.b_conv2,
