@@ -166,12 +166,15 @@ class A3CTrainingThread(object):
       batch_td.append(td)
       batch_R.append(R)
 
+    ## TODO: still has problem when batch size is less than 5 (when terminated)
+
     sess.run( self.accum_gradients,
               feed_dict = {
                 self.local_network.s: batch_si,
                 self.local_network.a: batch_a,
                 self.local_network.td: batch_td,
-                self.local_network.r: batch_R } )
+                self.local_network.r: batch_R,
+                self.local_network.step_size : [len(batch_a)] } )
       
     cur_learning_rate = self._anneal_learning_rate(global_t)
 
