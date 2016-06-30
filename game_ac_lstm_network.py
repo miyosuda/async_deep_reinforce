@@ -81,31 +81,6 @@ class GameACLSTMNetwork(object):
       self.reset_state()
       
 
-  def _prepare_weights(self):
-      self.W_conv1 = self._conv_weight_variable([8, 8, 4, 16])  # stride=4
-      self.b_conv1 = self._conv_bias_variable([16], 8, 8, 4)
-
-      self.W_conv2 = self._conv_weight_variable([4, 4, 16, 32]) # stride=2
-      self.b_conv2 = self._conv_bias_variable([32], 4, 4, 16)
-
-      self.W_fc1 = self._fc_weight_variable([2592, 256])
-      self.b_fc1 = self._fc_bias_variable([256], 2592)
-
-      # lstm
-      self.lstm = CustomBasicLSTMCell(256)
-
-      # weight for policy output layer
-      self.W_fc2 = self._fc_weight_variable([256, action_size])
-      self.b_fc2 = self._fc_bias_variable([action_size], 256)
-
-      # weight for value output layer
-      self.W_fc3 = self._fc_weight_variable([256, 1])
-      self.b_fc3 = self._fc_bias_variable([1], 256)
-
-      # lstm batch size is 1
-      self.initial_lstm_state = tf.zeros([1, self.lstm.state_size])
-      
-
   def prepare_loss(self, entropy_beta):
     with tf.device(self._device):
       
