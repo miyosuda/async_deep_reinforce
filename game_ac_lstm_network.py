@@ -2,7 +2,6 @@
 import tensorflow as tf
 import numpy as np
 from custom_lstm import CustomBasicLSTMCell
-from constants import LOCAL_T_MAX
 
 
 # Actor-Critic LSTM Network (Policy network and Value network)
@@ -85,10 +84,10 @@ class GameACLSTMNetwork(object):
     with tf.device(self._device):
       
       # taken action (input for policy)
-      self.a = tf.placeholder("float", [LOCAL_T_MAX, self._action_size])
+      self.a = tf.placeholder("float", [None, self._action_size])
     
       # temporary difference (R-V) (input for policy)
-      self.td = tf.placeholder("float", [LOCAL_T_MAX])
+      self.td = tf.placeholder("float", [None])
       
       # policy entropy
       entropy = -tf.reduce_sum(self.pi * tf.log(self.pi))
@@ -98,7 +97,7 @@ class GameACLSTMNetwork(object):
                        entropy * entropy_beta )
 
       # R (input for value)
-      self.r = tf.placeholder("float", [LOCAL_T_MAX])
+      self.r = tf.placeholder("float", [None])
       # value loss (output)
       # (Learning rate for Critic is half of Actor's, so multiply by 0.5)
       value_loss = 0.5 * tf.nn.l2_loss(self.r - self.v)
