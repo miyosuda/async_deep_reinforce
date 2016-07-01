@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 import random
 
 from game_state import GameState
-from game_ac_network import GameACNetwork
+#from game_ac_network import GameACNetwork
+from game_ac_lstm_network import GameACLSTMNetwork
 from a3c_training_thread import A3CTrainingThread
 from rmsprop_applier import RMSPropApplier
 
@@ -23,7 +24,8 @@ from constants import USE_GPU
 # use CPU for weight visualize tool
 device = "/cpu:0"
 
-global_network = GameACNetwork(ACTION_SIZE, device)
+#global_network = GameACNetwork(ACTION_SIZE, device)
+global_network = GameACLSTMNetwork(ACTION_SIZE, -1, device)
 
 training_threads = []
 
