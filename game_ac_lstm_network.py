@@ -52,7 +52,7 @@ class GameACLSTMNetwork(object):
 
       self.step_size = tf.placeholder(tf.float32, [1])
 
-      self.initial_lstm_state = tf.zeros([1, self.lstm.state_size])
+      self.initial_lstm_state = tf.placeholder(tf.float32, [1, self.lstm.state_size])
       
       scope = "net_" + str(thread_index)
 
@@ -64,10 +64,8 @@ class GameACLSTMNetwork(object):
                                                         time_major = False,
                                                         scope = scope)
 
-      # lstm_outputs = (1,5,256)
-
-      #print "lstm_outputs.shape=", lstm_outputs.get_shape()
-
+      # lstm_outputs: (1,5,256), (1,1,256)
+      
       lstm_outputs = tf.reshape(lstm_outputs, [-1,256])
 
       # policy (output)
@@ -113,6 +111,7 @@ class GameACLSTMNetwork(object):
                                                    feed_dict = {self.s : [s_t],
                                                                 self.initial_lstm_state : self.lstm_state_out,
                                                                 self.step_size : [1]} )
+    # pi_out: (1,3), v_out: (1)
     return (pi_out[0], v_out[0])
 
   def run_policy(self, sess, s_t):

@@ -97,6 +97,8 @@ class A3CTrainingThread(object):
     sess.run( self.sync )
 
     start_local_t = self.local_t
+
+    start_lstm_state = self.local_network.lstm_state_out
     
     # t_max times loop
     for i in range(LOCAL_T_MAX):
@@ -166,7 +168,10 @@ class A3CTrainingThread(object):
       batch_td.append(td)
       batch_R.append(R)
 
-    ## TODO: still has problem when batch size is less than 5 (when terminated)
+    batch_si.reverse()
+    batch_a.reverse()
+    batch_td.reverse()
+    batch_R.reverse()
 
     sess.run( self.accum_gradients,
               feed_dict = {
@@ -174,6 +179,7 @@ class A3CTrainingThread(object):
                 self.local_network.a: batch_a,
                 self.local_network.td: batch_td,
                 self.local_network.r: batch_R,
+                self.local_network.initial_lstm_state: start_lstm_state,
                 self.local_network.step_size : [len(batch_a)] } )
       
     cur_learning_rate = self._anneal_learning_rate(global_t)
