@@ -8,8 +8,7 @@ import random
 import math
 import os
 
-#from game_ac_network import GameACNetwork
-from game_ac_lstm_network import GameACLSTMNetwork
+from game_ac_network import GameACFFNetwork, GameACLSTMNetwork
 from a3c_training_thread import A3CTrainingThread
 from rmsprop_applier import RMSPropApplier
 
@@ -25,6 +24,7 @@ from constants import RMSP_EPSILON
 from constants import RMSP_ALPHA
 from constants import GRAD_NORM_CLIP
 from constants import USE_GPU
+from constants import USE_LSTM
 
 
 def log_uniform(lo, hi, rate):
@@ -45,8 +45,11 @@ global_t = 0
 
 stop_requested = False
 
-#global_network = GameACNetwork(ACTION_SIZE, device)
-global_network = GameACLSTMNetwork(ACTION_SIZE, -1, device)
+if USE_LSTM:
+  global_network = GameACLSTMNetwork(ACTION_SIZE, -1, device)
+else:
+  global_network = GameACFFNetwork(ACTION_SIZE, device)
+
 
 training_threads = []
 
@@ -136,4 +139,5 @@ if not os.path.exists(CHECKPOINT_DIR):
   os.mkdir(CHECKPOINT_DIR)  
 
 saver.save(sess, CHECKPOINT_DIR + '/' + 'checkpoint', global_step = global_t)
+
 
