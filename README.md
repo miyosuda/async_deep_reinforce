@@ -50,16 +50,16 @@ When running with 8 parallel A3C-FF game environemts, speeds of GPU (GTX980Ti) a
 
 |type | speed             |
 |-----|-------------------|
-| GPU | 396 steps per sec |
-| CPU | 321 steps per sec |
+| GPU | 821 steps per sec |
+| CPU | 472 steps per sec |
 
 
 ## Result
-Score plot of local threads of A3C FF pong in 24h (34.3 million global steps) was like this. (with GTX980Ti)
+Score plot of local threads of A3C-FF pong in 24h (70.9 million global steps) was like this. (with GTX980Ti)
 
 ![scores of local threads](https://github.com/miyosuda/async_deep_reinforce/blob/master/docs/graph_24h.png)
 
-Scores are not averaged using global network like paper.
+Scores are not averaged using global network unlike the original paper.
 
 ## References
 
