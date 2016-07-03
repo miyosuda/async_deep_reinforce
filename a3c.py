@@ -46,7 +46,7 @@ global_t = 0
 
 stop_requested = False
 
-global_network = MazeACFFNetwork(ACTION_SIZE, device)
+global_network = MazeACNetwork(ACTION_SIZE, device)
 
 
 training_threads = []

@@ -107,6 +107,7 @@ class MazeState(object):
       dx = -1
     if action == 3: # RIGHT
       dx = 1
+    # otherwize don't move
 
     image = self._move(dx, dy)
 
@@ -117,6 +118,9 @@ class MazeState(object):
       self.reward = 1
     else:
       self.reward = -1
+
+  def reset(self):
+    self._reset()
 
   def update(self):
     if self.terminal:

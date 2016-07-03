@@ -32,20 +32,17 @@ class MazeACNetwork(object):
       # policy (output)
       self.pi = tf.nn.softmax(tf.matmul(h_fc1, self.W_fc2) + self.b_fc2)
       # value (output)
-      self.v = tf.matmul(h_fc1, self.W_fc3) + self.b_fc3
+      v_ = tf.matmul(h_fc1, self.W_fc3) + self.b_fc3
+      self.v = tf.reshape( v_, [-1] )
 
   def prepare_loss(self, entropy_beta):
     with tf.device(self._device):
       # taken action (input for policy)
-      self.a = tf.placeholder("float", [None, self._action_size])
+      self.a = tf.placeholder("float", [None, self._action_size], "a")
     
       # temporary difference (R-V) (input for policy)
-      self.td = tf.placeholder("float", [None])
-      entropy = -tf.reduce_sum(self.pi * tf.log(self.pi), reduction_indices=1)
+      self.td = tf.placeholder("float", [None], "td")
       
-      # policy loss (output)  (add minus, because this is for gradient ascent)
-      self.policy_loss = - tf.reduce_sum( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ), reduction_indices=1 ) * self.td + entropy * entropy_beta )
-
       # policy entropy
       entropy = -tf.reduce_sum(self.pi * tf.log(self.pi), reduction_indices=1)
       

@@ -4,15 +4,17 @@ import numpy as np
 import random
 
 from accum_trainer import AccumTrainer
-from game_state import GameState
-from game_state import ACTION_SIZE
+#from game_state import GameState
+from maze_state import MazeState
 #from game_ac_network import GameACFFNetwork, GameACLSTMNetwork
-from maze_ac_network import MazeAcNetwork
+
+from maze_ac_network import MazeACNetwork
 
 from constants import GAMMA
 from constants import LOCAL_T_MAX
 from constants import ENTROPY_BETA
 from constants import USE_LSTM
+from constants import ACTION_SIZE
 
 
 class A3CTrainingThread(object):
@@ -29,7 +31,7 @@ class A3CTrainingThread(object):
     self.learning_rate_input = learning_rate_input
     self.max_global_time_step = max_global_time_step
 
-    self.local_network = MazeACLSTMNetwork(ACTION_SIZE, device)
+    self.local_network = MazeACNetwork(ACTION_SIZE, device)
 
     self.local_network.prepare_loss(ENTROPY_BETA)
 
@@ -47,7 +49,7 @@ class A3CTrainingThread(object):
 
     self.sync = self.local_network.sync_from(global_network)
     
-    self.game_state = GameState(113 * thread_index)
+    self.game_state = MazeState()
     
     self.local_t = 0
 
