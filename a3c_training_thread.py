@@ -6,7 +6,8 @@ import random
 from accum_trainer import AccumTrainer
 from game_state import GameState
 from game_state import ACTION_SIZE
-from game_ac_network import GameACFFNetwork, GameACLSTMNetwork
+#from game_ac_network import GameACFFNetwork, GameACLSTMNetwork
+from maze_ac_network import MazeAcNetwork
 
 from constants import GAMMA
 from constants import LOCAL_T_MAX
@@ -28,10 +29,7 @@ class A3CTrainingThread(object):
     self.learning_rate_input = learning_rate_input
     self.max_global_time_step = max_global_time_step
 
-    if USE_LSTM:
-      self.local_network = GameACLSTMNetwork(ACTION_SIZE, thread_index, device)
-    else:
-      self.local_network = GameACFFNetwork(ACTION_SIZE, device)
+    self.local_network = MazeACLSTMNetwork(ACTION_SIZE, device)
 
     self.local_network.prepare_loss(ENTROPY_BETA)
 
@@ -101,9 +99,6 @@ class A3CTrainingThread(object):
 
     start_local_t = self.local_t
 
-    if USE_LSTM:
-      start_lstm_state = self.local_network.lstm_state_out
-    
     # t_max times loop
     for i in range(LOCAL_T_MAX):
       pi_, value_ = self.local_network.run_policy_and_value(sess, self.game_state.s_t)
@@ -143,8 +138,6 @@ class A3CTrainingThread(object):
           
         self.episode_reward = 0
         self.game_state.reset()
-        if USE_LSTM:
-          self.local_network.reset_state()
         break
 
     R = 0.0
@@ -173,27 +166,12 @@ class A3CTrainingThread(object):
       batch_td.append(td)
       batch_R.append(R)
 
-    if USE_LSTM:
-      batch_si.reverse()
-      batch_a.reverse()
-      batch_td.reverse()
-      batch_R.reverse()
-
-      sess.run( self.accum_gradients,
-                feed_dict = {
-                  self.local_network.s: batch_si,
-                  self.local_network.a: batch_a,
-                  self.local_network.td: batch_td,
-                  self.local_network.r: batch_R,
-                  self.local_network.initial_lstm_state: start_lstm_state,
-                  self.local_network.step_size : [len(batch_a)] } )
-    else:
-      sess.run( self.accum_gradients,
-                feed_dict = {
-                  self.local_network.s: batch_si,
-                  self.local_network.a: batch_a,
-                  self.local_network.td: batch_td,
-                  self.local_network.r: batch_R} )
+    sess.run( self.accum_gradients,
+              feed_dict = {
+                self.local_network.s: batch_si,
+                self.local_network.a: batch_a,
+                self.local_network.td: batch_td,
+                self.local_network.r: batch_R} )
       
     cur_learning_rate = self._anneal_learning_rate(global_t)
 
