@@ -99,16 +99,16 @@ class MazeState(object):
   def process(self, action):
     dx = 0
     dy = 0
+
     if action == 0: # UP
       dy = -1
-    if action == 1: # DOWN
+    elif action == 1: # DOWN
       dy = 1
-    if action == 2: # LEFT
+    elif action == 2: # LEFT
       dx = -1
-    if action == 3: # RIGHT
-      dx = 1
-    # otherwize don't move
-
+    elif action == 3: # RIGHT
+       dx = 1
+    
     image = self._move(dx, dy)
 
     self.s_t1 = np.reshape(image, (10, 10, 1) )

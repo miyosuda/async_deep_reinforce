@@ -2,7 +2,6 @@
 
 LOCAL_T_MAX = 5 # repeat step size
 RMSP_ALPHA = 0.99 # decay parameter for RMSProp
-#RMSP_EPSILON = 0.1 # epsilon parameter for RMSProp
 RMSP_EPSILON = 1e-10 # epsilon parameter for RMSProp
 CHECKPOINT_DIR = 'checkpoints'
 LOG_FILE = 'tmp/a3c_log'
@@ -13,13 +12,9 @@ PARALLEL_SIZE = 8 # parallel thread size
 ROM = "pong.bin"     # action size = 3
 ACTION_SIZE = 4 # action size
 
-#INITIAL_ALPHA_LOG_RATE = 0.4226 # log_uniform interpolate rate for learning rate (around 7 * 10^-4)
 INITIAL_ALPHA_LOG_RATE = 1.0 # log_uniform interpolate rate for learning rate (around 7 * 10^-4)
-#GAMMA = 0.99 # discount factor for rewards
 GAMMA = 0.95 # discount factor for rewards
-#ENTROPY_BETA = 0.01 # entropy regurarlization constant
 ENTROPY_BETA = 0.1 # entropy regurarlization constant
-#MAX_TIME_STEP = 10 * 10**7
 MAX_TIME_STEP = 1000000 # 
 GRAD_NORM_CLIP = 40.0 # gradient norm clipping
 USE_GPU = False # To use GPU, set True
