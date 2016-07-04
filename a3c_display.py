@@ -78,5 +78,8 @@ while True:
   action = choose_action(pi_values)
   game_state.process(action)
 
-  game_state.update()
+  if game_state.terminal:
+    game_state.reset()
+  else:
+    game_state.update()
 
