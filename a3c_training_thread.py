@@ -49,7 +49,7 @@ class A3CTrainingThread(object):
 
     self.sync = self.local_network.sync_from(global_network)
     
-    self.game_state = GameState(113 * thread_index)
+    self.game_state = GameState()
     
     self.local_t = 0
 
