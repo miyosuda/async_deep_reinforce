@@ -23,7 +23,7 @@ class GameACNetwork(object):
       # policy entropy
       entropy = -tf.reduce_sum(self.pi * tf.log(self.pi), reduction_indices=1)
       
-      # policy loss (output)  (Adding minus, because the original paper's objective function is for gradient ascent, but we use gradient optimizer.)
+      # policy loss (output)  (Adding minus, because the original paper's objective function is for gradient ascent, but we use gradient descent optimizer.)
       policy_loss = - tf.reduce_sum( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ), reduction_indices=1 ) * self.td + entropy * entropy_beta )
 
       # R (input for value)
