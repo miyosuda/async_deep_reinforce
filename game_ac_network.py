@@ -5,7 +5,6 @@ from custom_lstm import CustomBasicLSTMCell
 
 # Actor-Critic Network Base Class
 # (Policy network and Value network)
-
 class GameACNetwork(object):
   def __init__(self,
                action_size,
@@ -24,7 +23,7 @@ class GameACNetwork(object):
       # policy entropy
       entropy = -tf.reduce_sum(self.pi * tf.log(self.pi), reduction_indices=1)
       
-      # policy loss (output)  (add minus, because this is for gradient ascent)
+      # policy loss (output)  (Adding minus, because the original paper's objective function is for gradient ascent, but we use gradient descent optimizer.)
       policy_loss = - tf.reduce_sum( tf.reduce_sum( tf.mul( tf.log(self.pi), self.a ), reduction_indices=1 ) * self.td + entropy * entropy_beta )
 
       # R (input for value)
@@ -93,7 +92,6 @@ class GameACNetwork(object):
     return tf.nn.conv2d(x, W, strides = [1, stride, stride, 1], padding = "VALID")
 
 # Actor-Critic FF Network
-
 class GameACFFNetwork(GameACNetwork):
   def __init__(self,
                action_size,
@@ -153,7 +151,6 @@ class GameACFFNetwork(GameACNetwork):
             self.W_fc3, self.b_fc3]
 
 # Actor-Critic LSTM Network
-
 class GameACLSTMNetwork(GameACNetwork):
   def __init__(self,
                action_size,
@@ -195,13 +192,18 @@ class GameACLSTMNetwork(GameACNetwork):
       h_fc1_reshaped = tf.reshape(h_fc1, [1,-1,256])
       # h_fc_reshaped = (1,5,256)
 
+      # place holder for LSTM unrolling time step size.
       self.step_size = tf.placeholder(tf.float32, [1])
 
       self.initial_lstm_state = tf.placeholder(tf.float32, [1, self.lstm.state_size])
       
       scope = "net_" + str(thread_index)
 
-      # time_major = False, so output shape is [batch_size, max_time, cell.output_size]
+      # Unrolling LSTM up to LOCAL_T_MAX time steps. (= 5time steps.)
+      # When episode terminates unrolling time steps becomes less than LOCAL_TIME_STEP.
+      # Unrolling step size is applied via self.step_size placeholder.
+      # When forward propagating, step_size is 1.
+      # (time_major = False, so output shape is [batch_size, max_time, cell.output_size])
       lstm_outputs, self.lstm_state = tf.nn.dynamic_rnn(self.lstm,
                                                         h_fc1_reshaped,
                                                         initial_state = self.initial_lstm_state,
@@ -209,7 +211,7 @@ class GameACLSTMNetwork(GameACNetwork):
                                                         time_major = False,
                                                         scope = scope)
 
-      # lstm_outputs: (1,5,256), (1,1,256)
+      # lstm_outputs: (1,5,256) for back prop, (1,1,256) for forward prop.
       
       lstm_outputs = tf.reshape(lstm_outputs, [-1,256])
 
@@ -226,6 +228,8 @@ class GameACLSTMNetwork(GameACNetwork):
     self.lstm_state_out = np.zeros([1, self.lstm.state_size])
 
   def run_policy_and_value(self, sess, s_t):
+    # This run_policy_and_value() is used when forward propagating.
+    # so the step size is 1.
     pi_out, v_out, self.lstm_state_out = sess.run( [self.pi, self.v, self.lstm_state],
                                                    feed_dict = {self.s : [s_t],
                                                                 self.initial_lstm_state : self.lstm_state_out,
@@ -234,6 +238,7 @@ class GameACLSTMNetwork(GameACNetwork):
     return (pi_out[0], v_out[0])
 
   def run_policy(self, sess, s_t):
+    # This run_policy() is used for displaying the result with display tool.    
     pi_out, self.lstm_state_out = sess.run( [self.pi, self.lstm_state],
                                             feed_dict = {self.s : [s_t],
                                                          self.initial_lstm_state : self.lstm_state_out,
@@ -242,6 +247,10 @@ class GameACLSTMNetwork(GameACNetwork):
     return pi_out[0]
 
   def run_value(self, sess, s_t):
+    # This run_value() is used for calculating V for bootstrapping at the 
+    # end of LOCAL_T_MAX time step sequence.
+    # When next sequcen starts, V will be calculated again with the same state using updated network weights,
+    # so we don't update LSTM state here.
     prev_lstm_state_out = self.lstm_state_out
     v_out, _ = sess.run( [self.v, self.lstm_state],
                          feed_dict = {self.s : [s_t],
