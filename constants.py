@@ -18,4 +18,4 @@ ENTROPY_BETA = 0.01 # entropy regurarlization constant
 MAX_TIME_STEP = 10 * 10**7
 GRAD_NORM_CLIP = 40.0 # gradient norm clipping
 USE_GPU = False # To use GPU, set True
-USE_LSTM = False # True for A3C LSTM, False for A3C FF
+USE_LSTM = True # True for A3C LSTM, False for A3C FF
