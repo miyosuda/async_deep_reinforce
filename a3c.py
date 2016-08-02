@@ -7,6 +7,7 @@ import signal
 import random
 import math
 import os
+import time
 
 from game_ac_network import GameACFFNetwork, GameACLSTMNetwork
 from a3c_training_thread import A3CTrainingThread
@@ -93,14 +94,23 @@ if checkpoint and checkpoint.model_checkpoint_path:
   # set global step
   global_t = int(tokens[1])
   print(">>> global step set: ", global_t)
+  # set wall time
+  wall_t_fname = CHECKPOINT_DIR + '/' + 'wall_t.' + str(global_t)
+  with open(wall_t_fname, 'r') as f:
+    wall_t = float(f.read())
 else:
   print("Could not find old checkpoint")
+  # set wall time
+  wall_t = 0.0
 
 
 def train_function(parallel_index):
   global global_t
   
   training_thread = training_threads[parallel_index]
+  # set start_time
+  start_time = time.time() - wall_t
+  training_thread.set_start_time(start_time)
 
   while True:
     if stop_requested:
@@ -124,6 +134,9 @@ for i in range(PARALLEL_SIZE):
   
 signal.signal(signal.SIGINT, signal_handler)
 
+# set start time
+start_time = time.time() - wall_t
+
 for t in train_threads:
   t.start()
 
@@ -137,6 +150,12 @@ for t in train_threads:
 
 if not os.path.exists(CHECKPOINT_DIR):
   os.mkdir(CHECKPOINT_DIR)  
+
+# write wall time
+wall_t = time.time() - start_time
+wall_t_fname = CHECKPOINT_DIR + '/' + 'wall_t.' + str(global_t)
+with open(wall_t_fname, 'w') as f:
+  f.write(str(wall_t))
 
 saver.save(sess, CHECKPOINT_DIR + '/' + 'checkpoint', global_step = global_t)
 
