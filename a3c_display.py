@@ -66,9 +66,9 @@ saver = tf.train.Saver()
 checkpoint = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
 if checkpoint and checkpoint.model_checkpoint_path:
   saver.restore(sess, checkpoint.model_checkpoint_path)
-  print "checkpoint loaded:", checkpoint.model_checkpoint_path
+  print("checkpoint loaded:", checkpoint.model_checkpoint_path)
 else:
-  print "Could not find old checkpoint"
+  print("Could not find old checkpoint")
 
 game_state = GameState(0, display=True, no_op_max=0)
 

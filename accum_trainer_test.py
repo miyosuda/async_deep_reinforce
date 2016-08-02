@@ -58,7 +58,7 @@ class AccumTrainerTest(tf.test.TestCase):
       #cost = tf.square(mul)
       cost = tf.reduce_sum( tf.square(mul) )
 
-      print cost.get_shape()
+      print(cost.get_shape())
       
       trainer.prepare_minimize(cost, [var0])
       

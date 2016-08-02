@@ -10,13 +10,13 @@ from constants import ACTION_SIZE
 class GameState(object):
   def __init__(self, rand_seed, display=False, no_op_max=7):
     self.ale = ALEInterface()
-    self.ale.setInt('random_seed', rand_seed)
+    self.ale.setInt(b'random_seed', rand_seed)
     self._no_op_max = no_op_max
 
     if display:
       self._setup_display()
     
-    self.ale.loadROM(ROM)
+    self.ale.loadROM(ROM.encode('ascii'))
 
     # collect minimal action set
     self.real_actions = self.ale.getMinimalActionSet()
@@ -51,10 +51,10 @@ class GameState(object):
     if sys.platform == 'darwin':
       import pygame
       pygame.init()
-      self.ale.setBool('sound', False)
+      self.ale.setBool(b'sound', False)
     elif sys.platform.startswith('linux'):
-      self.ale.setBool('sound', True)
-    self.ale.setBool('display_screen', True)
+      self.ale.setBool(b'sound', True)
+    self.ale.setBool(b'display_screen', True)
 
   def reset(self):
     self.ale.reset_game()

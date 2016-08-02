@@ -114,8 +114,8 @@ class A3CTrainingThread(object):
       values.append(value_)
 
       if (self.thread_index == 0) and (self.local_t % 100) == 0:
-        print "pi=", pi_
-        print " V=", value_
+        print("pi=", pi_)
+        print(" V=", value_)
 
       # process game
       self.game_state.process(action)
@@ -136,7 +136,7 @@ class A3CTrainingThread(object):
       
       if terminal:
         terminal_end = True
-        print "score=", self.episode_reward
+        print("score=", self.episode_reward)
 
         self._record_score(sess, summary_writer, summary_op, score_input,
                            self.episode_reward, global_t)
@@ -201,7 +201,7 @@ class A3CTrainingThread(object):
               feed_dict = { self.learning_rate_input: cur_learning_rate } )
 
     if (self.thread_index == 0) and (self.local_t % 100) == 0:
-      print "TIMESTEP", self.local_t
+      print("TIMESTEP", self.local_t)
 
     # return advanced local step size
     diff_local_t = self.local_t - start_local_t
