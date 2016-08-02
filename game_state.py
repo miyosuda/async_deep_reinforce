@@ -11,9 +11,10 @@ class GameState(object):
   def __init__(self, rand_seed, display=False, no_op_max=7):
     self.ale = ALEInterface()
     self.ale.setInt(b'random_seed', rand_seed)
-    self._no_op_max = no_op_max
     self.ale.setFloat(b'repeat_action_probability', 0.0)
     self.ale.setBool(b'color_averaging', True)
+    self.ale.setInt(b'frame_skip', 4)
+    self._no_op_max = no_op_max
 
     if display:
       self._setup_display()
@@ -22,7 +23,6 @@ class GameState(object):
 
     # collect minimal action set
     self.real_actions = self.ale.getMinimalActionSet()
-    print("real_actions=", self.real_actions)
 
     # height=210, width=160
     self._screen = np.empty((210, 160, 1), dtype=np.uint8)
