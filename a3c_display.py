@@ -49,14 +49,14 @@ grad_applier = RMSPropApplier(learning_rate = learning_rate_input,
                               clip_norm = GRAD_NORM_CLIP,
                               device = device)
 
-training_threads = []
-for i in range(PARALLEL_SIZE):
-  training_thread = A3CTrainingThread(i, global_network, 1.0,
-                                      learning_rate_input,
-                                      grad_applier,
-                                      8000000,
-                                      device = device)
-  training_threads.append(training_thread)
+# training_threads = []
+# for i in range(PARALLEL_SIZE):
+#   training_thread = A3CTrainingThread(i, global_network, 1.0,
+#                                       learning_rate_input,
+#                                       grad_applier,
+#                                       8000000,
+#                                       device = device)
+#   training_threads.append(training_thread)
 
 sess = tf.Session()
 init = tf.initialize_all_variables()
