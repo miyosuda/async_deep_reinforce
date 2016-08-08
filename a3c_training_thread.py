@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 import random
 import time
+import sys
 
 from accum_trainer import AccumTrainer
 from game_state import GameState
@@ -14,8 +15,8 @@ from constants import LOCAL_T_MAX
 from constants import ENTROPY_BETA
 from constants import USE_LSTM
 
-import sys
-LOG_INTERVAL = 1000
+LOG_INTERVAL = 100
+PERFORMANCE_LOG_INTERVAL = 1000
 
 class A3CTrainingThread(object):
   def __init__(self,
@@ -26,8 +27,6 @@ class A3CTrainingThread(object):
                grad_applier,
                max_global_time_step,
                device):
-
-    print("LOCAL_T_MAX=", LOCAL_T_MAX)
 
     self.thread_index = thread_index
     self.learning_rate_input = learning_rate_input
@@ -124,17 +123,8 @@ class A3CTrainingThread(object):
       values.append(value_)
 
       if (self.thread_index == 0) and (self.local_t % LOG_INTERVAL == 0):
-        print("pi={} (thread{})".format(pi_, self.thread_index))
-        print(" V={} (thread{})".format(value_, self.thread_index))
-
-      if np.any(np.isnan(pi_)):
-        print("pi={} (thread{})".format(pi_, self.thread_index))
-        print(" V={} (thread{})".format(value_, self.thread_index))
-        print("##############################################################")
-        print("# 'nan' appeared in pi. PLEASE KILL ME by 'control-c'        #")
-        print("# thread{} will exit".format(self.thread_index))
-        print("##############################################################")
-        sys.exit(0)
+        print("pi={}".format(pi_))
+        print(" V={}".format(value_))
 
       # process game
       self.game_state.process(action)
@@ -153,20 +143,9 @@ class A3CTrainingThread(object):
       # s_t1 -> s_t
       self.game_state.update()
       
-      if self.local_t % LOG_INTERVAL == 0:
-        indent = "         |" * self.thread_index
-        elapsed_time = time.time() - self.start_time
-        print("t={:6.0f},s={:9d},th={}:{}r={:3d}    |".format(
-              elapsed_time, global_t, self.thread_index,
-              indent, self.episode_reward))
-
       if terminal:
         terminal_end = True
-        indent = "         |" * self.thread_index
-        elapsed_time = time.time() - self.start_time
-        print("t={:6.0f},s={:9d},th={}:{}r={:3d}@END|".format(
-              elapsed_time, global_t, self.thread_index,
-              indent, self.episode_reward))
+        print("score={}".format(self.episode_reward))
 
         self._record_score(sess, summary_writer, summary_op, score_input,
                            self.episode_reward, global_t)
@@ -230,13 +209,12 @@ class A3CTrainingThread(object):
     sess.run( self.apply_gradients,
               feed_dict = { self.learning_rate_input: cur_learning_rate } )
 
-    if self.local_t - self.prev_local_t >= LOG_INTERVAL:
-      self.prev_local_t += LOG_INTERVAL
+    if (self.thread_index == 0) and (self.local_t - self.prev_local_t >= PERFORMANCE_LOG_INTERVAL):
+      self.prev_local_t += PERFORMANCE_LOG_INTERVAL
       elapsed_time = time.time() - self.start_time
       steps_per_sec = global_t / elapsed_time
-      if self.thread_index == 0:
-        print("### Performance : {} STEPS in {:.0f} sec. {:.0f} STEPS/sec. {:.2f}M STEPS/hour".format(
-              global_t,  elapsed_time, steps_per_sec, steps_per_sec * 3600 / 1000000.))
+      print("### Performance : {} STEPS in {:.0f} sec. {:.0f} STEPS/sec. {:.2f}M STEPS/hour".format(
+        global_t,  elapsed_time, steps_per_sec, steps_per_sec * 3600 / 1000000.))
 
     # return advanced local step size
     diff_local_t = self.local_t - start_local_t
