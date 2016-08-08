@@ -49,14 +49,14 @@ grad_applier = RMSPropApplier(learning_rate = learning_rate_input,
                               clip_norm = GRAD_NORM_CLIP,
                               device = device)
 
-training_threads = []
-for i in range(PARALLEL_SIZE):
-  training_thread = A3CTrainingThread(i, global_network, 1.0,
-                                      learning_rate_input,
-                                      grad_applier,
-                                      8000000,
-                                      device = device)
-  training_threads.append(training_thread)
+# training_threads = []
+# for i in range(PARALLEL_SIZE):
+#   training_thread = A3CTrainingThread(i, global_network, 1.0,
+#                                       learning_rate_input,
+#                                       grad_applier,
+#                                       8000000,
+#                                       device = device)
+#   training_threads.append(training_thread)
 
 sess = tf.Session()
 init = tf.initialize_all_variables()
@@ -66,9 +66,9 @@ saver = tf.train.Saver()
 checkpoint = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
 if checkpoint and checkpoint.model_checkpoint_path:
   saver.restore(sess, checkpoint.model_checkpoint_path)
-  print "checkpoint loaded:", checkpoint.model_checkpoint_path
+  print("checkpoint loaded:", checkpoint.model_checkpoint_path)
 else:
-  print "Could not find old checkpoint"
+  print("Could not find old checkpoint")
 
 game_state = GameState(display=True, no_op_max=0)
 
