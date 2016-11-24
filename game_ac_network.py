@@ -67,29 +67,25 @@ class GameACNetwork(object):
 
   # weight initialization based on muupan's code
   # https://github.com/muupan/async-rl/blob/master/a3c_ale.py
-  def _fc_weight_variable(self, shape):
-    input_channels = shape[0]
+  def _fc_variable(self, weight_shape):
+    input_channels  = weight_shape[0]
+    output_channels = weight_shape[1]
     d = 1.0 / np.sqrt(input_channels)
-    initial = tf.random_uniform(shape, minval=-d, maxval=d)
-    return tf.Variable(initial)
+    bias_shape = [output_channels]
+    weight = tf.Variable(tf.random_uniform(weight_shape, minval=-d, maxval=d))
+    bias   = tf.Variable(tf.random_uniform(bias_shape,   minval=-d, maxval=d))
+    return weight, bias
 
-  def _fc_bias_variable(self, shape, input_channels):
-    d = 1.0 / np.sqrt(input_channels)
-    initial = tf.random_uniform(shape, minval=-d, maxval=d)
-    return tf.Variable(initial)  
-
-  def _conv_weight_variable(self, shape):
-    w = shape[0]
-    h = shape[1]
-    input_channels = shape[2]
+  def _conv_variable(self, weight_shape):
+    w = weight_shape[0]
+    h = weight_shape[1]
+    input_channels  = weight_shape[2]
+    output_channels = weight_shape[3]
     d = 1.0 / np.sqrt(input_channels * w * h)
-    initial = tf.random_uniform(shape, minval=-d, maxval=d)
-    return tf.Variable(initial)
-
-  def _conv_bias_variable(self, shape, w, h, input_channels):
-    d = 1.0 / np.sqrt(input_channels * w * h)
-    initial = tf.random_uniform(shape, minval=-d, maxval=d)
-    return tf.Variable(initial)
+    bias_shape = [output_channels]
+    weight = tf.Variable(tf.random_uniform(weight_shape, minval=-d, maxval=d))
+    bias   = tf.Variable(tf.random_uniform(bias_shape,   minval=-d, maxval=d))
+    return weight, bias
 
   def _conv2d(self, x, W, stride):
     return tf.nn.conv2d(x, W, strides = [1, stride, stride, 1], padding = "VALID")
@@ -102,27 +98,21 @@ class GameACFFNetwork(GameACNetwork):
     GameACNetwork.__init__(self, action_size, device)
     
     with tf.device(self._device):
-      self.W_conv1 = self._conv_weight_variable([8, 8, 4, 16])  # stride=4
-      self.b_conv1 = self._conv_bias_variable([16], 8, 8, 4)
+      self.W_conv1, self.b_conv1 = self._conv_variable([8, 8, 4, 16])  # stride=4
+      self.W_conv2, self.b_conv2 = self._conv_variable([4, 4, 16, 32]) # stride=2
 
-      self.W_conv2 = self._conv_weight_variable([4, 4, 16, 32]) # stride=2
-      self.b_conv2 = self._conv_bias_variable([32], 4, 4, 16)
-
-      self.W_fc1 = self._fc_weight_variable([2592, 256])
-      self.b_fc1 = self._fc_bias_variable([256], 2592)
+      self.W_fc1, self.b_fc1 = self._fc_variable([2592, 256])
 
       # weight for policy output layer
-      self.W_fc2 = self._fc_weight_variable([256, action_size])
-      self.b_fc2 = self._fc_bias_variable([action_size], 256)
+      self.W_fc2, self.b_fc2 = self._fc_variable([256, action_size])
 
       # weight for value output layer
-      self.W_fc3 = self._fc_weight_variable([256, 1])
-      self.b_fc3 = self._fc_bias_variable([1], 256)
+      self.W_fc3, self.b_fc3 = self._fc_variable([256, 1])
 
       # state (input)
       self.s = tf.placeholder("float", [None, 84, 84, 4])
     
-      h_conv1 = tf.nn.relu(self._conv2d(self.s, self.W_conv1, 4) + self.b_conv1)
+      h_conv1 = tf.nn.relu(self._conv2d(self.s,  self.W_conv1, 4) + self.b_conv1)
       h_conv2 = tf.nn.relu(self._conv2d(h_conv1, self.W_conv2, 2) + self.b_conv2)
 
       h_conv2_flat = tf.reshape(h_conv2, [-1, 2592])
@@ -162,30 +152,24 @@ class GameACLSTMNetwork(GameACNetwork):
     GameACNetwork.__init__(self, action_size, device)    
 
     with tf.device(self._device):
-      self.W_conv1 = self._conv_weight_variable([8, 8, 4, 16])  # stride=4
-      self.b_conv1 = self._conv_bias_variable([16], 8, 8, 4)
-
-      self.W_conv2 = self._conv_weight_variable([4, 4, 16, 32]) # stride=2
-      self.b_conv2 = self._conv_bias_variable([32], 4, 4, 16)
-
-      self.W_fc1 = self._fc_weight_variable([2592, 256])
-      self.b_fc1 = self._fc_bias_variable([256], 2592)
+      self.W_conv1, self.b_conv1 = self._conv_variable([8, 8, 4, 16])  # stride=4
+      self.W_conv2, self.b_conv2 = self._conv_variable([4, 4, 16, 32]) # stride=2
+      
+      self.W_fc1, self.b_fc1 = self._fc_variable([2592, 256])
 
       # lstm
-      self.lstm = CustomBasicLSTMCell(256)
+      self.lstm = CustomBasicLSTMCell(256, state_is_tuple=True)
 
       # weight for policy output layer
-      self.W_fc2 = self._fc_weight_variable([256, action_size])
-      self.b_fc2 = self._fc_bias_variable([action_size], 256)
+      self.W_fc2, self.b_fc2 = self._fc_variable([256, action_size])
 
       # weight for value output layer
-      self.W_fc3 = self._fc_weight_variable([256, 1])
-      self.b_fc3 = self._fc_bias_variable([1], 256)
+      self.W_fc3, self.b_fc3 = self._fc_variable([256, 1])
 
       # state (input)
       self.s = tf.placeholder("float", [None, 84, 84, 4])
     
-      h_conv1 = tf.nn.relu(self._conv2d(self.s, self.W_conv1, 4) + self.b_conv1)
+      h_conv1 = tf.nn.relu(self._conv2d(self.s,  self.W_conv1, 4) + self.b_conv1)
       h_conv2 = tf.nn.relu(self._conv2d(h_conv1, self.W_conv2, 2) + self.b_conv2)
 
       h_conv2_flat = tf.reshape(h_conv2, [-1, 2592])
@@ -198,7 +182,10 @@ class GameACLSTMNetwork(GameACNetwork):
       # place holder for LSTM unrolling time step size.
       self.step_size = tf.placeholder(tf.float32, [1])
 
-      self.initial_lstm_state = tf.placeholder(tf.float32, [1, self.lstm.state_size])
+      self.initial_lstm_state0 = tf.placeholder(tf.float32, [1, 256])
+      self.initial_lstm_state1 = tf.placeholder(tf.float32, [1, 256])
+      self.initial_lstm_state = tf.nn.rnn_cell.LSTMStateTuple(self.initial_lstm_state0,
+                                                              self.initial_lstm_state1)
       
       scope = "net_" + str(thread_index)
 
@@ -228,14 +215,16 @@ class GameACLSTMNetwork(GameACNetwork):
       self.reset_state()
       
   def reset_state(self):
-    self.lstm_state_out = np.zeros([1, self.lstm.state_size])
+    self.lstm_state_out = tf.nn.rnn_cell.LSTMStateTuple(np.zeros([1, 256]),
+                                                        np.zeros([1, 256]))
 
   def run_policy_and_value(self, sess, s_t):
     # This run_policy_and_value() is used when forward propagating.
     # so the step size is 1.
     pi_out, v_out, self.lstm_state_out = sess.run( [self.pi, self.v, self.lstm_state],
                                                    feed_dict = {self.s : [s_t],
-                                                                self.initial_lstm_state : self.lstm_state_out,
+                                                                self.initial_lstm_state0 : self.lstm_state_out[0],
+                                                                self.initial_lstm_state1 : self.lstm_state_out[1],
                                                                 self.step_size : [1]} )
     # pi_out: (1,3), v_out: (1)
     return (pi_out[0], v_out[0])
@@ -244,7 +233,8 @@ class GameACLSTMNetwork(GameACNetwork):
     # This run_policy() is used for displaying the result with display tool.    
     pi_out, self.lstm_state_out = sess.run( [self.pi, self.lstm_state],
                                             feed_dict = {self.s : [s_t],
-                                                         self.initial_lstm_state : self.lstm_state_out,
+                                                         self.initial_lstm_state0 : self.lstm_state_out[0],
+                                                         self.initial_lstm_state1 : self.lstm_state_out[1],
                                                          self.step_size : [1]} )
                                             
     return pi_out[0]
@@ -257,7 +247,8 @@ class GameACLSTMNetwork(GameACNetwork):
     prev_lstm_state_out = self.lstm_state_out
     v_out, _ = sess.run( [self.v, self.lstm_state],
                          feed_dict = {self.s : [s_t],
-                                      self.initial_lstm_state : self.lstm_state_out,
+                                      self.initial_lstm_state0 : self.lstm_state_out[0],
+                                      self.initial_lstm_state1 : self.lstm_state_out[1],
                                       self.step_size : [1]} )
     
     # roll back lstm state

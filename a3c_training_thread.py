@@ -5,7 +5,6 @@ import random
 import time
 import sys
 
-from accum_trainer import AccumTrainer
 from game_state import GameState
 from game_state import ACTION_SIZE
 from game_ac_network import GameACFFNetwork, GameACLSTMNetwork
@@ -39,18 +38,18 @@ class A3CTrainingThread(object):
 
     self.local_network.prepare_loss(ENTROPY_BETA)
 
-    # TODO: don't need accum trainer anymore with batch
-    self.trainer = AccumTrainer(device)
-    self.trainer.prepare_minimize( self.local_network.total_loss,
-                                   self.local_network.get_vars() )
-    
-    self.accum_gradients = self.trainer.accumulate_gradients()
-    self.reset_gradients = self.trainer.reset_gradients()
-  
+    with tf.device(device):
+      var_refs = [v.ref() for v in self.local_network.get_vars()]
+      self.gradients = tf.gradients(
+        self.local_network.total_loss, var_refs,
+        gate_gradients=False,
+        aggregation_method=None,
+        colocate_gradients_with_ops=False)
+
     self.apply_gradients = grad_applier.apply_gradients(
       global_network.get_vars(),
-      self.trainer.get_accum_grad_list() )
-
+      self.gradients )
+      
     self.sync = self.local_network.sync_from(global_network)
     
     self.game_state = GameState(113 * thread_index)
@@ -71,25 +70,14 @@ class A3CTrainingThread(object):
     return learning_rate
 
   def choose_action(self, pi_values):
-    values = []
-    sum = 0.0
-    for rate in pi_values:
-      sum = sum + rate
-      value = sum
-      values.append(value)
-    
-    r = random.random() * sum
-    for i in range(len(values)):
-      if values[i] >= r:
-        return i;
-    #fail safe
-    return len(values)-1
+    return np.random.choice(range(len(pi_values)), p=pi_values)
 
   def _record_score(self, sess, summary_writer, summary_op, score_input, score, global_t):
     summary_str = sess.run(summary_op, feed_dict={
       score_input: score
     })
     summary_writer.add_summary(summary_str, global_t)
+    summary_writer.flush()
     
   def set_start_time(self, start_time):
     self.start_time = start_time
@@ -101,9 +89,6 @@ class A3CTrainingThread(object):
     values = []
 
     terminal_end = False
-
-    # reset accumulated gradients
-    sess.run( self.reset_gradients )
 
     # copy weights from shared to local
     sess.run( self.sync )
@@ -182,33 +167,32 @@ class A3CTrainingThread(object):
       batch_td.append(td)
       batch_R.append(R)
 
+    cur_learning_rate = self._anneal_learning_rate(global_t)
+
     if USE_LSTM:
       batch_si.reverse()
       batch_a.reverse()
       batch_td.reverse()
       batch_R.reverse()
 
-      sess.run( self.accum_gradients,
+      sess.run( self.apply_gradients,
                 feed_dict = {
                   self.local_network.s: batch_si,
                   self.local_network.a: batch_a,
                   self.local_network.td: batch_td,
                   self.local_network.r: batch_R,
                   self.local_network.initial_lstm_state: start_lstm_state,
-                  self.local_network.step_size : [len(batch_a)] } )
+                  self.local_network.step_size : [len(batch_a)],
+                  self.learning_rate_input: cur_learning_rate } )
     else:
-      sess.run( self.accum_gradients,
+      sess.run( self.apply_gradients,
                 feed_dict = {
                   self.local_network.s: batch_si,
                   self.local_network.a: batch_a,
                   self.local_network.td: batch_td,
-                  self.local_network.r: batch_R} )
+                  self.local_network.r: batch_R,
+                  self.learning_rate_input: cur_learning_rate} )
       
-    cur_learning_rate = self._anneal_learning_rate(global_t)
-
-    sess.run( self.apply_gradients,
-              feed_dict = { self.learning_rate_input: cur_learning_rate } )
-
     if (self.thread_index == 0) and (self.local_t - self.prev_local_t >= PERFORMANCE_LOG_INTERVAL):
       self.prev_local_t += PERFORMANCE_LOG_INTERVAL
       elapsed_time = time.time() - self.start_time

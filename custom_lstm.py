@@ -2,6 +2,8 @@
 import tensorflow as tf
 
 from tensorflow.python.ops.rnn_cell import RNNCell
+from tensorflow.python.ops.rnn_cell import LSTMStateTuple
+from tensorflow.python.util import nest
 
 class CustomBasicLSTMCell(RNNCell):
   """Custom Basic LSTM recurrent network cell.
@@ -18,7 +20,8 @@ class CustomBasicLSTMCell(RNNCell):
   For advanced models, please use the full LSTMCell that follows.
   """
 
-  def __init__(self, num_units, forget_bias=1.0, input_size=None):
+  def __init__(self, num_units, forget_bias=1.0, 
+               state_is_tuple=False, activation=tf.tanh):
     """Initialize the basic LSTM cell.
 
     Args:
@@ -26,14 +29,15 @@ class CustomBasicLSTMCell(RNNCell):
       forget_bias: float, The bias added to forget gates (see above).
       input_size: Deprecated and unused.
     """
-    if input_size is not None:
-      logging.warn("%s: The input_size parameter is deprecated." % self)
     self._num_units = num_units
     self._forget_bias = forget_bias
+    self._state_is_tuple = state_is_tuple    
+    self._activation = activation
 
   @property
   def state_size(self):
-    return 2 * self._num_units
+    return (LSTMStateTuple(self._num_units, self._num_units)
+            if self._state_is_tuple else 2 * self._num_units)
 
   @property
   def output_size(self):
@@ -43,16 +47,24 @@ class CustomBasicLSTMCell(RNNCell):
     """Long short-term memory cell (LSTM)."""
     with tf.variable_scope(scope or type(self).__name__):  # "BasicLSTMCell"
       # Parameters of gates are concatenated into one multiply for efficiency.
-      c, h = tf.split(1, 2, state)
+      if self._state_is_tuple:
+        c, h = state
+      else:
+        c, h = tf.split(1, 2, state)
       concat = self._linear([inputs, h], 4 * self._num_units, True)
 
       # i = input_gate, j = new_input, f = forget_gate, o = output_gate
       i, j, f, o = tf.split(1, 4, concat)
 
-      new_c = c * tf.sigmoid(f + self._forget_bias) + tf.sigmoid(i) * tf.tanh(j)
-      new_h = tf.tanh(new_c) * tf.sigmoid(o)
+      new_c = (c * tf.sigmoid(f + self._forget_bias) + tf.sigmoid(i) *
+               self._activation(j))
+      new_h = self._activation(new_c) * tf.sigmoid(o)
 
-      return new_h, tf.concat(1, [new_c, new_h])
+      if self._state_is_tuple:
+        new_state = LSTMStateTuple(new_c, new_h)
+      else:
+        new_state = tf.concat(1, [new_c, new_h])
+      return new_h, new_state
 
   def _linear(self, args, output_size, bias, bias_start=0.0, scope=None):
     """Linear map: sum_i(args[i] * W[i]), where W[i] is a variable.
@@ -71,9 +83,9 @@ class CustomBasicLSTMCell(RNNCell):
     Raises:
       ValueError: if some of the arguments has unspecified or wrong shape.
     """
-    if args is None or (isinstance(args, (list, tuple)) and not args):
+    if args is None or (nest.is_sequence(args) and not args):
       raise ValueError("`args` must be specified")
-    if not isinstance(args, (list, tuple)):
+    if not nest.is_sequence(args):
       args = [args]
   
     # Calculate the total size of arguments on dimension 1.
@@ -87,9 +99,12 @@ class CustomBasicLSTMCell(RNNCell):
       else:
         total_arg_size += shape[1]
   
+    dtype = [a.dtype for a in args][0]
+  
     # Now the computation.
-    with tf.variable_scope(scope or "Linear"):      
-      matrix = tf.get_variable("Matrix", [total_arg_size, output_size])
+    with tf.variable_scope(scope or "Linear"):
+      matrix = tf.get_variable(
+          "Matrix", [total_arg_size, output_size], dtype=dtype)
       if len(args) == 1:
         res = tf.matmul(args[0], matrix)
       else:
@@ -98,11 +113,13 @@ class CustomBasicLSTMCell(RNNCell):
         return res
       bias_term = tf.get_variable(
         "Bias", [output_size],
-        initializer=tf.constant_initializer(bias_start))
-
+        dtype=dtype,
+        initializer=tf.constant_initializer(
+          bias_start, dtype=dtype))
+  
       # Store as a member for copying. (Customized here)
       self.matrix = matrix      
       self.bias = bias_term
       
     return res + bias_term
-
+  

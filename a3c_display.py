@@ -18,19 +18,7 @@ from constants import USE_GPU
 from constants import USE_LSTM
 
 def choose_action(pi_values):
-  values = []
-  sum = 0.0
-  for rate in pi_values:
-    sum = sum + rate
-    value = sum
-    values.append(value)
-    
-  r = random.random() * sum
-  for i in range(len(values)):
-    if values[i] >= r:
-      return i;
-  #fail safe
-  return len(values)-1
+  return np.random.choice(range(len(pi_values)), p=pi_values)  
 
 # use CPU for display tool
 device = "/cpu:0"
@@ -48,15 +36,6 @@ grad_applier = RMSPropApplier(learning_rate = learning_rate_input,
                               epsilon = RMSP_EPSILON,
                               clip_norm = GRAD_NORM_CLIP,
                               device = device)
-
-# training_threads = []
-# for i in range(PARALLEL_SIZE):
-#   training_thread = A3CTrainingThread(i, global_network, 1.0,
-#                                       learning_rate_input,
-#                                       grad_applier,
-#                                       8000000,
-#                                       device = device)
-#   training_threads.append(training_thread)
 
 sess = tf.Session()
 init = tf.initialize_all_variables()
@@ -78,5 +57,8 @@ while True:
   action = choose_action(pi_values)
   game_state.process(action)
 
-  game_state.update()
+  if game_state.terminal:
+    game_state.reset()
+  else:
+    game_state.update()
 
