@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 import numpy as np
-from custom_lstm import CustomBasicLSTMCell
 
 # Actor-Critic Network Base Class
 # (Policy network and Value network)
 class GameACNetwork(object):
   def __init__(self,
                action_size,
+               thread_index, # -1 for global               
                device="/cpu:0"):
-    self._device = device
     self._action_size = action_size
+    self._thread_index = thread_index
+    self._device = device    
 
   def prepare_loss(self, entropy_beta):
     with tf.device(self._device):
@@ -94,10 +95,12 @@ class GameACNetwork(object):
 class GameACFFNetwork(GameACNetwork):
   def __init__(self,
                action_size,
+               thread_index, # -1 for global
                device="/cpu:0"):
-    GameACNetwork.__init__(self, action_size, device)
-    
-    with tf.device(self._device):
+    GameACNetwork.__init__(self, action_size, thread_index, device)
+
+    scope_name = "net_" + str(self._thread_index)
+    with tf.device(self._device), tf.variable_scope(scope_name) as scope:
       self.W_conv1, self.b_conv1 = self._conv_variable([8, 8, 4, 16])  # stride=4
       self.W_conv2, self.b_conv2 = self._conv_variable([4, 4, 16, 32]) # stride=2
 
@@ -149,16 +152,17 @@ class GameACLSTMNetwork(GameACNetwork):
                action_size,
                thread_index, # -1 for global
                device="/cpu:0" ):
-    GameACNetwork.__init__(self, action_size, device)    
+    GameACNetwork.__init__(self, action_size, thread_index, device)
 
-    with tf.device(self._device):
+    scope_name = "net_" + str(self._thread_index)
+    with tf.device(self._device), tf.variable_scope(scope_name) as scope:
       self.W_conv1, self.b_conv1 = self._conv_variable([8, 8, 4, 16])  # stride=4
       self.W_conv2, self.b_conv2 = self._conv_variable([4, 4, 16, 32]) # stride=2
       
       self.W_fc1, self.b_fc1 = self._fc_variable([2592, 256])
 
       # lstm
-      self.lstm = CustomBasicLSTMCell(256, state_is_tuple=True)
+      self.lstm = tf.nn.rnn_cell.BasicLSTMCell(256, state_is_tuple=True)
 
       # weight for policy output layer
       self.W_fc2, self.b_fc2 = self._fc_variable([256, action_size])
@@ -187,8 +191,6 @@ class GameACLSTMNetwork(GameACNetwork):
       self.initial_lstm_state = tf.nn.rnn_cell.LSTMStateTuple(self.initial_lstm_state0,
                                                               self.initial_lstm_state1)
       
-      scope = "net_" + str(thread_index)
-
       # Unrolling LSTM up to LOCAL_T_MAX time steps. (= 5time steps.)
       # When episode terminates unrolling time steps becomes less than LOCAL_TIME_STEP.
       # Unrolling step size is applied via self.step_size placeholder.
@@ -211,6 +213,10 @@ class GameACLSTMNetwork(GameACNetwork):
       # value (output)
       v_ = tf.matmul(lstm_outputs, self.W_fc3) + self.b_fc3
       self.v = tf.reshape( v_, [-1] )
+
+      scope.reuse_variables()
+      self.W_lstm = tf.get_variable("BasicLSTMCell/Linear/Matrix")
+      self.b_lstm = tf.get_variable("BasicLSTMCell/Linear/Bias")
 
       self.reset_state()
       
@@ -259,6 +265,6 @@ class GameACLSTMNetwork(GameACNetwork):
     return [self.W_conv1, self.b_conv1,
             self.W_conv2, self.b_conv2,
             self.W_fc1, self.b_fc1,
-            self.lstm.matrix, self.lstm.bias,
+            self.W_lstm, self.b_lstm,
             self.W_fc2, self.b_fc2,
             self.W_fc3, self.b_fc3]

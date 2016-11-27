@@ -26,7 +26,7 @@ device = "/cpu:0"
 if USE_LSTM:
   global_network = GameACLSTMNetwork(ACTION_SIZE, -1, device)
 else:
-  global_network = GameACFFNetwork(ACTION_SIZE, device)
+  global_network = GameACFFNetwork(ACTION_SIZE, -1, device)
 
 learning_rate_input = tf.placeholder("float")
 

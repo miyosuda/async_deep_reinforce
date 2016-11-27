@@ -49,7 +49,7 @@ stop_requested = False
 if USE_LSTM:
   global_network = GameACLSTMNetwork(ACTION_SIZE, -1, device)
 else:
-  global_network = GameACFFNetwork(ACTION_SIZE, device)
+  global_network = GameACFFNetwork(ACTION_SIZE, -1, device)
 
 
 training_threads = []
