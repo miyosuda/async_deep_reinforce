@@ -74,15 +74,15 @@ for i in range(PARALLEL_SIZE):
 sess = tf.Session(config=tf.ConfigProto(log_device_placement=False,
                                         allow_soft_placement=True))
 
-init = tf.initialize_all_variables()
+init = tf.global_variables_initializer()
 sess.run(init)
 
 # summary for tensorboard
 score_input = tf.placeholder(tf.int32)
-tf.scalar_summary("score", score_input)
+tf.summary.scalar("score", score_input)
 
-summary_op = tf.merge_all_summaries()
-summary_writer = tf.train.SummaryWriter(LOG_FILE, sess.graph_def)
+summary_op = tf.summary.merge_all()
+summary_writer = tf.summary.FileWriter(LOG_FILE, sess.graph)
 
 # init or load checkpoint with saver
 saver = tf.train.Saver()
@@ -158,5 +158,4 @@ with open(wall_t_fname, 'w') as f:
   f.write(str(wall_t))
 
 saver.save(sess, CHECKPOINT_DIR + '/' + 'checkpoint', global_step = global_t)
-
 
