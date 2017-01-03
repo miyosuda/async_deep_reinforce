@@ -96,7 +96,7 @@ class RMSPropApplier(object):
       with tf.control_dependencies(None):
         self._create_slots(var_list)
 
-      with tf.op_scope([], name, self._name) as name:
+      with tf.name_scope(name, self._name, []) as name:
         self._prepare()
         for var, accum_grad in zip(var_list, accum_grad_list):
           with tf.name_scope("update_" + var.op.name), tf.device(var.device):
