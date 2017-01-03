@@ -59,7 +59,7 @@ class GameACNetwork(object):
     sync_ops = []
 
     with tf.device(self._device):
-      with tf.op_scope([], name, "GameACNetwork") as name:
+      with tf.name_scope(name, "GameACNetwork", []) as name:
         for(src_var, dst_var) in zip(src_vars, dst_vars):
           sync_op = tf.assign(dst_var, src_var)
           sync_ops.append(sync_op)
