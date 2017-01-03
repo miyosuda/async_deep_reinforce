@@ -38,7 +38,7 @@ grad_applier = RMSPropApplier(learning_rate = learning_rate_input,
                               device = device)
 
 sess = tf.Session()
-init = tf.initialize_all_variables()
+init = tf.global_variables_initializer()
 sess.run(init)
 
 saver = tf.train.Saver()
@@ -61,4 +61,3 @@ while True:
     game_state.reset()
   else:
     game_state.update()
-
