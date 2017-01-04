@@ -48,10 +48,10 @@ To enable gpu, change "USE_GPU" flag in "constants.py".
 
 When running with 8 parallel game environemts, speeds of GPU (GTX980Ti) and CPU(Core i7 6700) were like this.
 
-|type | A3C-FF            |A3C-LSTM          |
-|-----|-------------------|------------------|
-| GPU | 821 steps per sec |416 steps per sec |
-| CPU | 472 steps per sec |243 steps per sec |
+|type | A3C-FF             |A3C-LSTM          |
+|-----|--------------------|------------------|
+| GPU | 1722 steps per sec |864 steps per sec |
+| CPU | 1077 steps per sec |540 steps per sec |
 
 
 ## Result
