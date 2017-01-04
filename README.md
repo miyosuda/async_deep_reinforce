@@ -46,7 +46,7 @@ To display the result with game play,
 ## Using GPU
 To enable gpu, change "USE_GPU" flag in "constants.py".
 
-When running with 8 parallel game environemts, speeds of GPU (GTX980Ti) and CPU(Core i7 6700) were like this.
+When running with 8 parallel game environemts, speeds of GPU (GTX980Ti) and CPU(Core i7 6700) were like this. (Recorded with LOCAL_T_MAX=20 setting.)
 
 |type | A3C-FF             |A3C-LSTM          |
 |-----|--------------------|------------------|
@@ -66,6 +66,12 @@ Score plots of local threads of pong were like these. (with GTX980Ti)
 ![A3C-LSTM T=20](./docs/graph_t20.png)
 
 Scores are not averaged using global network unlike the original paper.
+
+## Requirements
+- TensorFlow r0.12
+- numpy
+- cv2
+- matplotlib
 
 ## References
 
