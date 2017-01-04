@@ -55,17 +55,15 @@ When running with 8 parallel game environemts, speeds of GPU (GTX980Ti) and CPU(
 
 
 ## Result
-Score plots of local threads of pong in 24h were like these. (with GTX980Ti)
+Score plots of local threads of pong were like these. (with GTX980Ti)
 
-### A3C-FF 
-(70.9 million global steps in 24 hours)
+### A3C-LSTM LOCAL_T_MAX = 5
 
-![A3C-FF scores](https://github.com/miyosuda/async_deep_reinforce/blob/master/docs/graph_24h.png)
+![A3C-LSTM T=5](./docs/graph_t5.png)
 
-### A3C-LSTM 
-(35.9 million global steps in 24 hours)
+### A3C-LSTM LOCAL_T_MAX = 20
 
-![A3C-LSTM scores](https://github.com/miyosuda/async_deep_reinforce/blob/master/docs/graph_24h_lstm.png)
+![A3C-LSTM T=20](./docs/graph_t20.png)
 
 Scores are not averaged using global network unlike the original paper.
 
