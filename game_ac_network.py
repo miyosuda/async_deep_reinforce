@@ -28,7 +28,7 @@ class GameACNetwork(object):
       entropy = -tf.reduce_sum(self.pi * log_pi, reduction_indices=1)
       
       # policy loss (output)  (Adding minus, because the original paper's objective function is for gradient ascent, but we use gradient descent optimizer.)
-      policy_loss = - tf.reduce_sum( tf.reduce_sum( tf.mul( log_pi, self.a ), reduction_indices=1 ) * self.td + entropy * entropy_beta )
+      policy_loss = - tf.reduce_sum( tf.reduce_sum( tf.multiply( log_pi, self.a ), reduction_indices=1 ) * self.td + entropy * entropy_beta )
 
       # R (input for value)
       self.r = tf.placeholder("float", [None])
@@ -162,7 +162,7 @@ class GameACLSTMNetwork(GameACNetwork):
       self.W_fc1, self.b_fc1 = self._fc_variable([2592, 256])
 
       # lstm
-      self.lstm = tf.nn.rnn_cell.BasicLSTMCell(256, state_is_tuple=True)
+      self.lstm = tf.contrib.rnn.BasicLSTMCell(256, state_is_tuple=True)
 
       # weight for policy output layer
       self.W_fc2, self.b_fc2 = self._fc_variable([256, action_size])
@@ -188,7 +188,7 @@ class GameACLSTMNetwork(GameACNetwork):
 
       self.initial_lstm_state0 = tf.placeholder(tf.float32, [1, 256])
       self.initial_lstm_state1 = tf.placeholder(tf.float32, [1, 256])
-      self.initial_lstm_state = tf.nn.rnn_cell.LSTMStateTuple(self.initial_lstm_state0,
+      self.initial_lstm_state = tf.contrib.rnn.LSTMStateTuple(self.initial_lstm_state0,
                                                               self.initial_lstm_state1)
       
       # Unrolling LSTM up to LOCAL_T_MAX time steps. (= 5time steps.)
@@ -215,13 +215,13 @@ class GameACLSTMNetwork(GameACNetwork):
       self.v = tf.reshape( v_, [-1] )
 
       scope.reuse_variables()
-      self.W_lstm = tf.get_variable("BasicLSTMCell/Linear/Matrix")
-      self.b_lstm = tf.get_variable("BasicLSTMCell/Linear/Bias")
+      self.W_lstm = tf.get_variable("basic_lstm_cell/weights")
+      self.b_lstm = tf.get_variable("basic_lstm_cell/biases")
 
       self.reset_state()
       
   def reset_state(self):
-    self.lstm_state_out = tf.nn.rnn_cell.LSTMStateTuple(np.zeros([1, 256]),
+    self.lstm_state_out = tf.contrib.rnn.LSTMStateTuple(np.zeros([1, 256]),
                                                         np.zeros([1, 256]))
 
   def run_policy_and_value(self, sess, s_t):

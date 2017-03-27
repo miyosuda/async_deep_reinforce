@@ -68,7 +68,7 @@ Score plots of local threads of pong were like these. (with GTX980Ti)
 Scores are not averaged using global network unlike the original paper.
 
 ## Requirements
-- TensorFlow r0.12
+- TensorFlow r1.0
 - numpy
 - cv2
 - matplotlib
